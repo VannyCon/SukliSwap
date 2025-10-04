@@ -1,0 +1,4 @@
+data/tiles/
+.env
+database
+connection/
