@@ -134,6 +134,34 @@ class OfferService extends config {
      */
     public function updateOffer($offerId, $data, $userId) {
         try {
+            
+            // Validate required fields
+            if (!isset($data['coin_type_id']) || empty($data['coin_type_id'])) {
+                return [
+                    'success' => false,
+                    'message' => 'Coin type is required'
+                ];
+            }
+            
+            if (!isset($data['quantity']) || empty($data['quantity'])) {
+                return [
+                    'success' => false,
+                    'message' => 'Quantity is required'
+                ];
+            }
+            
+            // Check if coin_type_id exists
+            $coinTypeCheck = "SELECT id FROM tbl_coin_types WHERE id = ?";
+            $coinTypeStmt = $this->pdo->prepare($coinTypeCheck);
+            $coinTypeStmt->execute([$data['coin_type_id']]);
+            
+            if (!$coinTypeStmt->fetch()) {
+                return [
+                    'success' => false,
+                    'message' => 'Invalid coin type selected'
+                ];
+            }
+            
             // Check if offer belongs to user
             $checkSql = "SELECT id FROM tbl_coin_offers WHERE id = ? AND user_id = ?";
             $checkStmt = $this->pdo->prepare($checkSql);

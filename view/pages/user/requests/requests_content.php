@@ -138,18 +138,18 @@
 </div>
 
 <!-- Create Request Modal -->
-<div class="modal fade" id="createRequestModal" tabindex="-1">
-    <div class="modal-dialog">
+<div class="modal fade" id="createRequestModal" tabindex="-1" aria-labelledby="createRequestModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Create Coin Request</h5>
+                <h5 class="modal-title" id="createRequestModalLabel">Create Coin Request</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="coinRequestForm">
+            <form id="coinRequestForm" novalidate>
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="request_coin_type" class="form-label">Coin Type</label>
-                        <select class="form-control coin-type-select" id="request_coin_type" name="coin_type_id" required>
+                        <select class="form-select coin-type-select" id="request_coin_type" name="coin_type_id" required>
                             <option value="">Select coin type</option>
                         </select>
                     </div>
@@ -165,7 +165,7 @@
                     <input type="hidden" class="form-control" id="request_meeting_latitude" name="meeting_latitude" step="any">
                     <div class="mb-3">
                         <button type="button" class="btn btn-outline-secondary" id="getLocationBtn">
-                            <i class="fas fa-location-arrow"></i> Get Current Location
+                            <i class="fas fa-location-arrow"></i> Pick Meeting Location
                         </button>
                     </div>
                     <div class="mb-3">
@@ -182,20 +182,39 @@
     </div>
 </div>
 
-<!-- Edit Request Modal -->
-<div class="modal fade" id="editRequestModal" tabindex="-1">
-    <div class="modal-dialog">
+<!-- Location Picker Modal -->
+<div class="modal fade" id="locationPickerModal" tabindex="-1" aria-labelledby="locationPickerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Edit Coin Request</h5>
+                <h5 class="modal-title" id="locationPickerModalLabel">Select Meeting Location</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="editRequestForm">
+            <div class="modal-body" style="height: 480px; padding: 0;">
+                <div id="locationPickerMap" style="height: 100%; width: 100%;"></div>
+            </div>
+            <div class="modal-footer">
+                <small class="text-muted me-auto">Click on the map to place the pin. Zoom 19 for precise selection.</small>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
+</div>
+<!-- Edit Request Modal -->
+<div class="modal fade" id="editRequestModal" tabindex="-1" aria-labelledby="editRequestModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editRequestModalLabel">Edit Coin Request</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editRequestForm" novalidate>
                 <input type="hidden" id="edit_request_id" name="request_id">
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="edit_request_coin_type" class="form-label">Coin Type</label>
-                        <select class="form-control coin-type-select" id="edit_request_coin_type" name="coin_type_id" required>
+                        <select class="form-select coin-type-select" id="edit_request_coin_type" name="coin_type_id" required>
                             <option value="">Select coin type</option>
                         </select>
                     </div>

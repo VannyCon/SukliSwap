@@ -319,8 +319,7 @@ class MapIntegrationManager {
                 // Update form fields if they exist
                 this.updateLocationFields(lat, lng);
                 
-                this.showToast('Location updated successfully!', 'success');
-                
+                CustomToast.show('success', 'Location updated successfully!');
                 if (locationBtn) {
                     locationBtn.disabled = false;
                     locationBtn.className = 'btn btn-outline-success';

@@ -102,6 +102,59 @@ class CoinExchangeService extends config {
         }
     }
 
+
+
+    public function getAvailableCoinRequests($page = 1, $size = 12, $search = '', $status = '', $userId = null) {
+        try {
+            $page = max(1, (int)$page);
+            $size = max(1, min(100, (int)$size));
+            $offset = ($page - 1) * $size;
+
+            $whereClauses = [];
+            $params = [];
+            
+            if ($search !== null && $search !== '') {
+                $whereClauses[] = "(u.username LIKE :search OR u.first_name LIKE :search OR u.last_name LIKE :search OR ct.description LIKE :search)";
+                $params[':search'] = "%" . $search . "%";
+            }
+            
+            if ($status !== null && $status !== '') {
+                $whereClauses[] = "cr.status = :status";
+                $params[':status'] = $status;
+            }
+            
+            if ($userId !== null) {
+                $whereClauses[] = "cr.user_id != :user_id";
+                $params[':user_id'] = $userId;
+            }
+            
+            $whereSql = count($whereClauses) ? ('WHERE ' . implode(' AND ', $whereClauses)) : '';
+
+            $query = "SELECT cr.*, u.username, u.first_name, u.last_name, u.email,
+                             ct.denomination, ct.description as coin_description,
+                             up.business_name, up.business_type
+                      FROM tbl_coin_requests cr
+                      JOIN tbl_users u ON cr.user_id = u.id
+                      JOIN tbl_coin_types ct ON cr.coin_type_id = ct.id
+                      LEFT JOIN tbl_user_profiles up ON u.id = up.user_id
+                      $whereSql
+                      ORDER BY cr.created_at DESC
+                      LIMIT :limit OFFSET :offset";
+            
+            $stmt = $this->pdo->prepare($query);
+            foreach ($params as $k => $v) {
+                $stmt->bindValue($k, $v, is_int($v) ? PDO::PARAM_INT : PDO::PARAM_STR);
+            }
+            $stmt->bindValue(':limit', (int)$size, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Get coin requests error: " . $e->getMessage());
+            return [];
+        }
+    }
+
     /**
      * Count coin requests
      */
@@ -318,6 +371,59 @@ class CoinExchangeService extends config {
             return [];
         }
     }
+
+
+    public function getAvailableCoinOffers($page = 1, $size = 12, $search = '', $status = '', $userId = null) {
+        try {
+            $page = max(1, (int)$page);
+            $size = max(1, min(100, (int)$size));
+            $offset = ($page - 1) * $size;
+
+            $whereClauses = [];
+            $params = [];
+            
+            if ($search !== null && $search !== '') {
+                $whereClauses[] = "(u.username LIKE :search OR u.first_name LIKE :search OR u.last_name LIKE :search OR ct.description LIKE :search)";
+                $params[':search'] = "%" . $search . "%";
+            }
+            
+            if ($status !== null && $status !== '') {
+                $whereClauses[] = "co.status = :status";
+                $params[':status'] = $status;
+            }
+            
+            if ($userId !== null) {
+                $whereClauses[] = "co.user_id != :user_id";
+                $params[':user_id'] = $userId;
+            }
+            
+            $whereSql = count($whereClauses) ? ('WHERE ' . implode(' AND ', $whereClauses)) : '';
+
+            $query = "SELECT co.*, u.username, u.first_name, u.last_name, u.email,
+                             ct.denomination, ct.description as coin_description,
+                             up.business_name, up.business_type
+                      FROM tbl_coin_offers co
+                      JOIN tbl_users u ON co.user_id = u.id
+                      JOIN tbl_coin_types ct ON co.coin_type_id = ct.id
+                      LEFT JOIN tbl_user_profiles up ON u.id = up.user_id
+                      $whereSql
+                      ORDER BY co.created_at DESC
+                      LIMIT :limit OFFSET :offset";
+            
+            $stmt = $this->pdo->prepare($query);
+            foreach ($params as $k => $v) {
+                $stmt->bindValue($k, $v, is_int($v) ? PDO::PARAM_INT : PDO::PARAM_STR);
+            }
+            $stmt->bindValue(':limit', (int)$size, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Get coin offers error: " . $e->getMessage());
+            return [];
+        }
+    }
+
 
     /**
      * Count coin offers

@@ -63,9 +63,9 @@ $middleware->requireAuth(function() {
     error_log("Inside authenticated callback");
     global $requestService;
     
-    // Handle different actions based on HTTP method
+    // Handle all actions via POST method
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
-        $action = $_POST['action'] ?? '';
+        $action = $_GET['action'] ?? '';
         
         switch ($action) {
             case 'createRequest':
@@ -75,22 +75,6 @@ $middleware->requireAuth(function() {
                 echo json_encode($result);
                 break;
                 
-            default:
-                http_response_code(400);
-                echo json_encode([
-                    'success' => false, 
-                    'message' => 'Invalid action',
-                    'available_actions' => [
-                        'createRequest'
-                    ]
-                ]);
-                break;
-        }
-    } elseif ($_SERVER["REQUEST_METHOD"] == "GET") {
-        $action = $_GET['action'] ?? '';
-        error_log("GET action received: " . $action);
-        
-        switch ($action) {
             case 'getMyRequests':
                 $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
                 $size = isset($_GET['size']) ? intval($_GET['size']) : 12;
@@ -135,23 +119,8 @@ $middleware->requireAuth(function() {
                 echo json_encode($result);
                 break;
                 
-            default:
-                http_response_code(400);
-                echo json_encode([
-                    'success' => false, 
-                    'message' => 'Invalid action',
-                    'available_actions' => [
-                        'getMyRequests', 'getRequestById', 'getRequestStats'
-                    ]
-                ]);
-                break;
-        }
-    } elseif ($_SERVER["REQUEST_METHOD"] == "PUT") {
-        $action = $_POST['action'] ?? '';
-        
-        switch ($action) {
             case 'updateRequest':
-                $requestId = $_POST['request_id'] ?? '';
+                $requestId = $_GET['request_id'] ?? '';
                 if ($requestId) {
                     $data = $requestService->cleanArray($_POST);
                     $result = $requestService->updateRequest($requestId, $data, $GLOBALS['current_user']['id']);
@@ -165,23 +134,8 @@ $middleware->requireAuth(function() {
                 }
                 break;
                 
-            default:
-                http_response_code(400);
-                echo json_encode([
-                    'success' => false, 
-                    'message' => 'Invalid action',
-                    'available_actions' => [
-                        'updateRequest'
-                    ]
-                ]);
-                break;
-        }
-    } elseif ($_SERVER["REQUEST_METHOD"] == "DELETE") {
-        $action = $_POST['action'] ?? '';
-        
-        switch ($action) {
             case 'deleteRequest':
-                $requestId = $_POST['request_id'] ?? '';
+                $requestId = $_GET['request_id'] ?? '';
                 if ($requestId) {
                     $result = $requestService->deleteRequest($requestId, $GLOBALS['current_user']['id']);
                     echo json_encode($result);
@@ -195,7 +149,7 @@ $middleware->requireAuth(function() {
                 break;
 
             case 'cancelRequest':
-                $requestId = $_POST['request_id'] ?? '';
+                $requestId = $_GET['request_id'] ?? '';
                 if ($requestId) {
                     $result = $requestService->cancelRequest($requestId, $GLOBALS['current_user']['id']);
                     echo json_encode($result);
@@ -214,7 +168,8 @@ $middleware->requireAuth(function() {
                     'success' => false, 
                     'message' => 'Invalid action',
                     'available_actions' => [
-                        'deleteRequest', 'cancelRequest'
+                        'createRequest', 'getMyRequests', 'getRequestById', 'getRequestStats',
+                        'updateRequest', 'deleteRequest', 'cancelRequest'
                     ]
                 ]);
                 break;
@@ -224,7 +179,7 @@ $middleware->requireAuth(function() {
         echo json_encode([
             'success' => false,
             'message' => 'Method not allowed',
-            'allowed_methods' => ['GET', 'POST', 'PUT', 'DELETE']
+            'allowed_methods' => ['POST']
         ]);
     }
 });

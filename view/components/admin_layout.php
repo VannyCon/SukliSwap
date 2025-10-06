@@ -45,6 +45,7 @@ ob_start();
     
     <!-- Sidebar JS -->
     <script src="../../../js/sidebar.js"></script>
+    <script src="../../../js/notifications.js"></script>
     
     <!-- Page-specific JS -->
     <?php if (isset($page_js)): ?>

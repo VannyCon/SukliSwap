@@ -46,11 +46,11 @@ class RequestsManager {
 
         // Location buttons
         document.getElementById('getLocationBtn')?.addEventListener('click', () => {
-            this.getCurrentLocation('request');
+            this.openLocationPicker('request');
         });
 
         document.getElementById('getEditLocationBtn')?.addEventListener('click', () => {
-            this.getCurrentLocation('edit_request');
+            this.openLocationPicker('edit_request');
         });
     }
 
@@ -77,7 +77,8 @@ class RequestsManager {
             this.coinTypes.forEach(coinType => {
                 const option = document.createElement('option');
                 option.value = coinType.id;
-                option.textContent = `${coinType.coin_name} (${coinType.coin_value})`;
+                // Use the correct field names from API response
+                option.textContent = `${coinType.description} (₱${coinType.denomination})`;
                 select.appendChild(option);
             });
         });
@@ -89,7 +90,8 @@ class RequestsManager {
             this.coinTypes.forEach(coinType => {
                 const option = document.createElement('option');
                 option.value = coinType.id;
-                option.textContent = `${coinType.coin_name} (${coinType.coin_value})`;
+                // Use the correct field names from API response
+                option.textContent = `${coinType.description} (₱${coinType.denomination})`;
                 filterSelect.appendChild(option);
             });
         }
@@ -115,7 +117,7 @@ class RequestsManager {
             }
         } catch (error) {
             console.error('Error loading requests:', error);
-            this.showError('Failed to load requests');
+            CustomToast.show('error', 'Failed to load requests');
         }
     }
 
@@ -136,17 +138,18 @@ class RequestsManager {
             return;
         }
 
-        container.innerHTML = this.requests.map(request => `
+        container.innerHTML = this.requests.map(request => {
+            return `
             <div class="card mb-3">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col-md-1">
                             <img src="${request.coin_image || '/assets/images/default-coin.png'}" 
-                                 alt="${request.coin_name}" class="img-thumbnail" style="width: 50px; height: 50px;">
+                                 alt="${request.coin_description}" class="img-thumbnail" style="width: 50px; height: 50px;">
                         </div>
                         <div class="col-md-3">
-                            <h6 class="mb-1">${request.coin_name}</h6>
-                            <small class="text-muted">Value: ${request.coin_value}</small>
+                            <h6 class="mb-1">${request.coin_description}</h6>
+                            <small class="text-muted">Value: ₱${request.denomination}</small>
                         </div>
                         <div class="col-md-2">
                             <strong>${request.quantity}</strong> pieces
@@ -184,7 +187,7 @@ class RequestsManager {
                     ` : ''}
                 </div>
             </div>
-        `).join('');
+        `}).join('');
     }
 
     getStatusColor(status) {
@@ -218,25 +221,34 @@ class RequestsManager {
         const formData = new FormData(form);
         const data = Object.fromEntries(formData.entries());
 
+        // Convert to URL-encoded string for PHP $_POST compatibility
+        const urlEncodedData = new URLSearchParams(data).toString();
+
         try {
-            const response = await axios.post(`${userRequestsAPI}`, data, {
+            const response = await axios.post(`${userRequestsAPI}?action=createRequest`, urlEncodedData, {
                 headers: formHeaderAPI
             });
 
-
-            const result = response.data.data;
+            const result = response.data;
             
             if (result.success) {
-                this.showSuccess('Request created successfully');
+                CustomToast.show('success', 'Request created successfully');
                 form.reset();
-                bootstrap.Modal.getInstance(document.getElementById('createRequestModal')).hide();
+                // Hide modal with proper cleanup
+                const modalElement = document.getElementById('createRequestModal');
+                if (modalElement) {
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    if (modal) {
+                        modal.hide();
+                    }
+                }
                 this.loadRequests();
             } else {
-                this.showError(result.message);
+                CustomToast.show('error', result.message);
             }
         } catch (error) {
             console.error('Error creating request:', error);
-            this.showError('Failed to create request');
+            CustomToast.show('error', 'Failed to create request');
         }
     }
 
@@ -246,29 +258,64 @@ class RequestsManager {
         const data = Object.fromEntries(formData.entries());
         const requestId = data.request_id;
 
+        // Convert to URL-encoded string for PHP $_POST compatibility
+        const urlEncodedData = new URLSearchParams(data).toString();
+
         try {
-            const response = await axios.put(`${coinExchangeAPI}?action=updateRequest&request_id=${requestId}`, data, {
+            const response = await axios.post(`${userRequestsAPI}?action=updateRequest&request_id=${requestId}`, urlEncodedData, {
                 headers: formHeaderAPI
             });
 
-            const result = response.data.data;
+            const result = response.data;
             
             if (result.success) {
-                this.showSuccess('Request updated successfully');
-                bootstrap.Modal.getInstance(document.getElementById('editRequestModal')).hide();
+                CustomToast.show('success', 'Request updated successfully');
+                // Hide modal with proper cleanup
+                const modalElement = document.getElementById('editRequestModal');
+                if (modalElement) {
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    if (modal) {
+                        modal.hide();
+                    }
+                }
                 this.loadRequests();
             } else {
-                this.showError(result.message);
+                CustomToast.show('error', result.message);
             }
         } catch (error) {
             console.error('Error updating request:', error);
-            this.showError('Failed to update request');
+            CustomToast.show('error', 'Failed to update request');
         }
     }
 
     editRequest(requestId) {
-        const request = this.requests.find(r => r.id === requestId);
-        if (!request) return;
+        
+        // Convert requestId to both number and string for comparison
+        const numericId = parseInt(requestId);
+        const stringId = String(requestId);
+        
+        // Try multiple comparison methods to handle type mismatches
+        const request = this.requests.find(r => {
+            const rId = r.id;
+            const rIdNum = parseInt(rId);
+            const rIdStr = String(rId);
+            
+            const matches = rId === requestId || 
+                   rId === numericId || 
+                   rId === stringId ||
+                   rIdNum === requestId ||
+                   rIdNum === numericId ||
+                   rIdStr === stringId;
+                   
+            
+            return matches;
+        });
+        
+        if (!request) {
+            CustomToast.show('error', `Request with ID ${requestId} not found`);
+            return;
+        }
+
 
         // Populate edit form
         document.getElementById('edit_request_id').value = request.id;
@@ -279,29 +326,58 @@ class RequestsManager {
         document.getElementById('edit_request_meeting_latitude').value = request.meeting_latitude || '';
         document.getElementById('edit_request_notes').value = request.notes || '';
 
-        // Show modal
-        new bootstrap.Modal(document.getElementById('editRequestModal')).show();
+        // Show modal with proper cleanup and error handling
+        const modalElement = document.getElementById('editRequestModal');
+        
+        if (modalElement) {
+            // Clean up any existing modal instances
+            const existingModal = bootstrap.Modal.getInstance(modalElement);
+            if (existingModal) {
+                existingModal.dispose();
+            }
+            
+            // Clean up any modal backdrops
+            this.cleanupModalBackdrops();
+            
+            // Create and show new modal
+            try {
+                const modal = new bootstrap.Modal(modalElement, {
+                    backdrop: true,
+                    keyboard: true,
+                    focus: true
+                });
+                console.log('Showing modal');
+                modal.show();
+                console.log('Modal show() called successfully');
+            } catch (error) {
+                console.error('Error showing edit modal:', error);
+                CustomToast.show('error', 'Failed to open edit modal');
+            }
+        } else {
+            console.error('Edit modal element not found');
+            CustomToast.show('error', 'Edit modal not found');
+        }
     }
 
     async cancelRequest(requestId) {
         if (!confirm('Are you sure you want to cancel this request?')) return;
 
         try {
-            const response = await axios.delete(`${coinExchangeAPI}?action=cancelRequest&request_id=${requestId}`, {
+            const response = await axios.post(`${userRequestsAPI}?action=cancelRequest&request_id=${requestId}`, {}, {
                 headers: formHeaderAPI
             });
 
-            const result = response.data.data;
+            const result = response.data;
             
             if (result.success) {
-                CustomToast.success('Request cancelled successfully');
+                CustomToast.show('success', 'Request cancelled successfully');
                 this.loadRequests();
             } else {
-                this.showError(result.message);
+                CustomToast.show('error', result.message);
             }
         } catch (error) {
             console.error('Error cancelling request:', error);
-            this.showError('Failed to cancel request');
+            CustomToast.show('error', 'Failed to cancel request');
         }
     }
 
@@ -310,7 +386,7 @@ class RequestsManager {
         if (!request) return;
 
         // Show request details in a modal or redirect to details page
-        alert(`Request Details:\n\nCoin: ${request.coin_name}\nQuantity: ${request.quantity}\nStatus: ${request.status}\nLocation: ${request.preferred_meeting_location || 'Not specified'}\nNotes: ${request.notes || 'None'}`);
+        alert(`Request Details:\n\nCoin: ${request.coin_description}\nValue: ₱${request.denomination}\nQuantity: ${request.quantity}\nStatus: ${request.status}\nLocation: ${request.preferred_meeting_location || 'Not specified'}\nNotes: ${request.notes || 'None'}`);
     }
 
     filterRequests() {
@@ -340,10 +416,111 @@ class RequestsManager {
         
         this.loadRequests();
     }
+    openLocationPicker(prefix) {
+		const triggerBtn = document.getElementById(prefix === 'request' ? 'getLocationBtn' : 'getEditLocationBtn');
+		const modalEl = document.getElementById('locationPickerModal');
+		const parentModalEl = document.getElementById(prefix === 'request' ? 'createRequestModal' : 'editRequestModal');
+		if (!modalEl) {
+            this.showError('Location picker is unavailable');
+            return;
+        }
+		// Follow requested behavior: manually toggle displays and 'show' class to bypass .fade opacity
+		if (parentModalEl) {
+			parentModalEl.classList.remove('show');
+			parentModalEl.style.display = 'none';
+		}
+		modalEl.style.display = 'block';
+		modalEl.classList.add('show');
+		// Ensure a backdrop exists
+		let backdrop = document.querySelector('.modal-backdrop');
+		if (!backdrop) {
+			backdrop = document.createElement('div');
+			backdrop.className = 'modal-backdrop fade show';
+			document.body.appendChild(backdrop);
+		}
+		document.body.classList.add('modal-open');
+
+        const mapContainerId = 'locationPickerMap';
+        const initMap = (center) => {   
+            try {
+                if (window.__locationPickerMap) {
+                    window.__locationPickerMap.remove();
+                    window.__locationPickerMap = null;
+                }
+                const map = new maplibregl.Map({
+                    container: mapContainerId,
+                    style: 'https://tiles.openfreemap.org/styles/bright',
+                    center: center,
+                    zoom: 19
+                });
+                map.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+                let marker = null;
+                const placeMarker = (lngLat) => {
+                    if (marker) marker.remove();
+                    marker = new maplibregl.Marker({ color: '#e11d48' }).setLngLat(lngLat).addTo(map);
+                };
+
+                map.on('click', (e) => {
+                    const lngLat = [e.lngLat.lng, e.lngLat.lat];
+                    placeMarker(lngLat);
+                    // Confirm selection
+                    const ok = confirm(`Use this meeting place?\nLatitude: ${lngLat[1].toFixed(6)}\nLongitude: ${lngLat[0].toFixed(6)}`);
+					if (ok) {
+						const latInputId = prefix === 'request' ? 'request_meeting_latitude' : 'edit_request_meeting_latitude';
+						const lngInputId = prefix === 'request' ? 'request_meeting_longitude' : 'edit_request_meeting_longitude';
+						document.getElementById(latInputId).value = lngLat[1];
+						document.getElementById(lngInputId).value = lngLat[0];
+						// Close second modal and reopen first (per requested behavior)
+						modalEl.classList.remove('show');
+						modalEl.style.display = 'none';
+						if (parentModalEl) {
+							parentModalEl.style.display = 'block';
+							parentModalEl.classList.add('show');
+						}
+                        CustomToast.show('success', 'Meeting location set');
+                    }
+                });
+
+                window.__locationPickerMap = map;
+                setTimeout(() => map.resize(), 200);
+            } catch (e) {
+                console.error('Failed to initialize location picker map', e);
+                this.showError('Failed to initialize map');
+            }
+        };
+
+		// Try to center at user's current position; fallback to default center
+		if (navigator.geolocation) {
+			if (triggerBtn) {
+				triggerBtn.disabled = true;
+				triggerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Locating...';
+			}
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+					if (triggerBtn) {
+						triggerBtn.disabled = false;
+						triggerBtn.innerHTML = '<i class=\"fas fa-location-arrow\"></i> Pick Meeting Location';
+					}
+                    initMap([pos.coords.longitude, pos.coords.latitude]);
+                },
+                () => {
+					if (triggerBtn) {
+						triggerBtn.disabled = false;
+						triggerBtn.innerHTML = '<i class=\"fas fa-location-arrow\"></i> Pick Meeting Location';
+					}
+                    initMap([120.9842, 14.5995]);
+                },
+                { enableHighAccuracy: true, timeout: 8000 }
+            );
+        } else {
+            initMap([120.9842, 14.5995]);
+        }
+    }
 
     getCurrentLocation(prefix) {
         if (!navigator.geolocation) {
-            this.showError('Geolocation is not supported by this browser');
+            CustomToast.show('error', 'Geolocation is not supported by this browser');
             return;
         }
 
@@ -360,12 +537,12 @@ class RequestsManager {
                 document.getElementById(`${prefix}_meeting_longitude`).value = lng;
                 
                 // Get address from coordinates (you might want to use a geocoding service)
-                document.getElementById(`${prefix}_location`).value = `${lat}, ${lng}`;
+                // document.getElementById(`${prefix}_location`).value = `${lat}, ${lng}`;
                 
                 locationBtn.disabled = false;
                 locationBtn.innerHTML = '<i class="fas fa-location-arrow"></i> Get Current Location';
                 
-                this.showSuccess('Location updated successfully');
+                CustomToast.show('success', 'Location updated successfully');
             },
             (error) => {
                 locationBtn.disabled = false;
@@ -383,7 +560,7 @@ class RequestsManager {
                         message = 'Location request timed out';
                         break;
                 }
-                this.showError(message);
+                CustomToast.show('error', message);
             }
         );
     }
@@ -397,9 +574,53 @@ class RequestsManager {
         // You can implement a toast notification system here
         alert('Error: ' + message);
     }
+
+    // Helper function to clean up modal backdrops
+    cleanupModalBackdrops() {
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        backdrops.forEach(backdrop => {
+            backdrop.remove();
+        });
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+    }
+
+    // Test function to manually test request lookup
+    testRequestLookup(id) {
+        console.log('Testing request lookup for ID:', id);
+        console.log('Available requests:', this.requests.map(r => ({ id: r.id, type: typeof r.id })));
+        
+        const numericId = parseInt(id);
+        const stringId = String(id);
+        
+        const request = this.requests.find(r => {
+            const rId = r.id;
+            const rIdNum = parseInt(rId);
+            const rIdStr = String(rId);
+            
+            return rId === id || 
+                   rId === numericId || 
+                   rId === stringId ||
+                   rIdNum === id ||
+                   rIdNum === numericId ||
+                   rIdStr === stringId;
+        });
+        
+        console.log('Found request:', request);
+        return request;
+    }
 }
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     window.requestsManager = new RequestsManager();
+    // Make test lookup function globally available
+    window.testRequestLookup = (id) => {
+        if (window.requestsManager) {
+            return window.requestsManager.testRequestLookup(id);
+        } else {
+            console.error('RequestsManager not initialized');
+        }
+    };
 });

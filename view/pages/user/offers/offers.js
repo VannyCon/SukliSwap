@@ -41,13 +41,13 @@ class OffersManager {
             this.updateOffer();
         });
 
-        // Location buttons
+        // Location picker: open map and let user click to select
         document.getElementById('getLocationBtn')?.addEventListener('click', () => {
-            this.getCurrentLocation('offer');
+            this.openLocationPicker('offer');
         });
 
         document.getElementById('getEditLocationBtn')?.addEventListener('click', () => {
-            this.getCurrentLocation('edit_offer');
+            this.openLocationPicker('edit_offer');
         });
     }
 
@@ -74,7 +74,8 @@ class OffersManager {
             this.coinTypes.forEach(coinType => {
                 const option = document.createElement('option');
                 option.value = coinType.id;
-                option.textContent = `${coinType.coin_name} (${coinType.coin_value})`;
+                // Use the correct field names from API response
+                option.textContent = `${coinType.description} (₱${coinType.denomination})`;
                 select.appendChild(option);
             });
         });
@@ -86,7 +87,8 @@ class OffersManager {
             this.coinTypes.forEach(coinType => {
                 const option = document.createElement('option');
                 option.value = coinType.id;
-                option.textContent = `${coinType.coin_name} (${coinType.coin_value})`;
+                // Use the correct field names from API response
+                option.textContent = `${coinType.description} (₱${coinType.denomination})`;
                 filterSelect.appendChild(option);
             });
         }
@@ -113,7 +115,7 @@ class OffersManager {
             
         } catch (error) {
             console.error('Error loading offers:', error);
-            this.showError('Failed to load offers');
+            CustomToast.show('error', 'Failed to load offers');
         }
     }
 
@@ -140,11 +142,11 @@ class OffersManager {
                     <div class="row align-items-center">
                         <div class="col-md-1">
                             <img src="${offer.coin_image || '/assets/images/default-coin.png'}" 
-                                 alt="${offer.coin_name}" class="img-thumbnail" style="width: 50px; height: 50px;">
+                                 alt="${offer.coin_description}" class="img-thumbnail" style="width: 50px; height: 50px;">
                         </div>
                         <div class="col-md-3">
-                            <h6 class="mb-1">${offer.coin_name}</h6>
-                            <small class="text-muted">Value: ${offer.coin_value}</small>
+                            <h6 class="mb-1">${offer.coin_description}</h6>
+                            <small class="text-muted">Value: ₱${offer.denomination}</small>
                         </div>
                         <div class="col-md-2">
                             <strong>${offer.quantity}</strong> pieces
@@ -216,24 +218,31 @@ class OffersManager {
         const formData = new FormData(form);
         const data = Object.fromEntries(formData.entries());
 
+        // Convert to URL-encoded string for PHP $_POST compatibility
+        const urlEncodedData = new URLSearchParams(data).toString();
+        console.log('URL encoded create data:', urlEncodedData);
+
         try {
-            const response = await axios.post(`${coinOffersAPI}`, data, {
+            const response = await axios.post(`${coinOffersAPI}?action=createOffer`, urlEncodedData, {
                 headers: formHeaderAPI
             });
 
-            const result = response.data.data;
+            const result = response.data;
             
             if (result.success) {
-                CustomToast.success('Offer created successfully');
+                CustomToast.show('success', 'Offer created successfully');
                 form.reset();
-                bootstrap.Modal.getInstance(document.getElementById('createOfferModal')).hide();
+                const modal = bootstrap.Modal.getInstance(document.getElementById('createOfferModal'));
+                if (modal) {
+                    modal.hide();
+                }
                 this.loadOffers();
             } else {
-                this.showError(result.message);
+                CustomToast.show('error', result.message);
             }
         } catch (error) {
             console.error('Error creating offer:', error);
-            this.showError('Failed to create offer');
+            CustomToast.show('error', 'Failed to create offer');
         }
     }
 
@@ -242,30 +251,68 @@ class OffersManager {
         const formData = new FormData(form);
         const data = Object.fromEntries(formData.entries());
         const offerId = data.offer_id;
-
+        console.log('Form data being sent:', data);
+        
+        // Convert to URL-encoded string for PHP $_POST compatibility
+        const urlEncodedData = new URLSearchParams(data).toString();
+        console.log('URL encoded data:', urlEncodedData);
+        
         try {
-            const response = await axios.put(`${coinOffersAPI}?action=updateOffer&offer_id=${offerId}`, data, {
+            const response = await axios.post(`${coinOffersAPI}?action=updateOffer&offer_id=${offerId}`, urlEncodedData, {
                 headers: formHeaderAPI
             });
 
-            const result = response.data.data;
+            const result = response.data;
             
             if (result.success) {
-                CustomToast.success('Offer updated successfully');
-                bootstrap.Modal.getInstance(document.getElementById('editOfferModal')).hide();
+                CustomToast.show('success', 'Offer updated successfully');
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editOfferModal'));
+                if (modal) {
+                    modal.hide();
+                }
                 this.loadOffers();
             } else {
-                this.showError(result.message);
+                CustomToast.show('error', result.message);
             }
         } catch (error) {
             console.error('Error updating offer:', error);
-            this.showError('Failed to update offer');
+            CustomToast.show('error', 'Failed to update offer');
         }
     }
 
     editOffer(offerId) {
-        const offer = this.offers.find(o => o.id === offerId);
-        if (!offer) return;
+        
+        // Convert offerId to both number and string for comparison
+        const numericId = parseInt(offerId);
+        const stringId = String(offerId);
+        
+        // Try multiple comparison methods to handle type mismatches
+        const offer = this.offers.find(o => {
+            const oId = o.id;
+            const oIdNum = parseInt(oId);
+            const oIdStr = String(oId);
+            
+            const matches = oId === offerId || 
+                   oId === numericId || 
+                   oId === stringId ||
+                   oIdNum === offerId ||
+                   oIdNum === numericId ||
+                   oIdStr === stringId;
+                   
+            if (matches) {
+                console.log('MATCH FOUND!', o);
+            }
+            
+            return matches;
+        });
+        
+        if (!offer) {
+        
+            CustomToast.show('error', `Offer with ID ${offerId} not found`);
+            return;
+        }
+
+        console.log('Found offer:', offer);
 
         // Populate edit form
         document.getElementById('edit_offer_id').value = offer.id;
@@ -276,29 +323,62 @@ class OffersManager {
         document.getElementById('edit_offer_meeting_latitude').value = offer.meeting_latitude || '';
         document.getElementById('edit_offer_notes').value = offer.notes || '';
 
-        // Show modal
-        new bootstrap.Modal(document.getElementById('editOfferModal')).show();
+        console.log('Form populated successfully');
+
+        // Show modal with proper cleanup and error handling
+        const modalElement = document.getElementById('editOfferModal');
+        console.log('Modal element:', modalElement);
+        
+        if (modalElement) {
+            // Clean up any existing modal instances
+            const existingModal = bootstrap.Modal.getInstance(modalElement);
+            if (existingModal) {
+                console.log('Disposing existing modal instance');
+                existingModal.dispose();
+            }
+            
+            // Clean up any modal backdrops
+            this.cleanupModalBackdrops();
+            
+            // Create and show new modal
+            try {
+                console.log('Creating new modal instance');
+                const modal = new bootstrap.Modal(modalElement, {
+                    backdrop: true,
+                    keyboard: true,
+                    focus: true
+                });
+                console.log('Showing modal');
+                modal.show();
+                console.log('Modal show() called successfully');
+            } catch (error) {
+                console.error('Error showing edit modal:', error);
+                CustomToast.show('error', 'Failed to open edit modal');
+            }
+        } else {
+            console.error('Edit modal element not found');
+            CustomToast.show('error', 'Edit modal not found');
+        }
     }
 
     async cancelOffer(offerId) {
-        if (!confirm('Are you sure you want to cancel this offer?')) return;
 
         try {
-            const response = await axios.delete(`${coinOffersAPI}?action=cancelOffer&offer_id=${offerId}`, {
+            const response = await axios.post(`${coinOffersAPI}?action=cancelOffer&offer_id=${offerId}`, {}, {
                 headers: formHeaderAPI
             });
 
-            const result = response.data.data;
+            const result = response.data;
             
             if (result.success) {
-                CustomToast.success('Offer cancelled successfully');
+                CustomToast.show('success', 'Offer cancelled successfully');
                 this.loadOffers();
             } else {
-                this.showError(result.message);
+                CustomToast.show('error', result.message);
             }
         } catch (error) {
             console.error('Error cancelling offer:', error);
-            this.showError('Failed to cancel offer');
+            CustomToast.show('error', 'Failed to cancel offer');
         }
     }
 
@@ -307,7 +387,7 @@ class OffersManager {
         if (!offer) return;
 
         // Show offer details in a modal or redirect to details page
-        alert(`Offer Details:\n\nCoin: ${offer.coin_name}\nQuantity: ${offer.quantity}\nStatus: ${offer.status}\nLocation: ${offer.preferred_meeting_location || 'Not specified'}\nNotes: ${offer.notes || 'None'}`);
+        alert(`Offer Details:\n\nCoin: ${offer.coin_description}\nValue: ₱${offer.denomination}\nQuantity: ${offer.quantity}\nStatus: ${offer.status}\nLocation: ${offer.preferred_meeting_location || 'Not specified'}\nNotes: ${offer.notes || 'None'}`);
     }
 
     filterOffers() {
@@ -338,51 +418,106 @@ class OffersManager {
         this.loadOffers();
     }
 
-    getCurrentLocation(prefix) {
-        if (!navigator.geolocation) {
-            this.showError('Geolocation is not supported by this browser');
+    openLocationPicker(prefix) {
+		const triggerBtn = document.getElementById(prefix === 'offer' ? 'getLocationBtn' : 'getEditLocationBtn');
+		const modalEl = document.getElementById('locationPickerModal');
+		const parentModalEl = document.getElementById(prefix === 'offer' ? 'createOfferModal' : 'editOfferModal');
+		if (!modalEl) {
+            this.showError('Location picker is unavailable');
             return;
         }
+		// Follow requested behavior: manually toggle displays and 'show' class to bypass .fade opacity
+		if (parentModalEl) {
+			parentModalEl.classList.remove('show');
+			parentModalEl.style.display = 'none';
+		}
+		modalEl.style.display = 'block';
+		modalEl.classList.add('show');
+		// Ensure a backdrop exists
+		let backdrop = document.querySelector('.modal-backdrop');
+		if (!backdrop) {
+			backdrop = document.createElement('div');
+			backdrop.className = 'modal-backdrop fade show';
+			document.body.appendChild(backdrop);
+		}
+		document.body.classList.add('modal-open');
 
-        const locationBtn = document.getElementById(prefix === 'offer' ? 'getLocationBtn' : 'getEditLocationBtn');
-        locationBtn.disabled = true;
-        locationBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Getting location...';
-
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const lat = position.coords.latitude;
-                const lng = position.coords.longitude;
-                
-                document.getElementById(`${prefix}_meeting_latitude`).value = lat;
-                document.getElementById(`${prefix}_meeting_longitude`).value = lng;
-                
-                // Get address from coordinates (you might want to use a geocoding service)
-                document.getElementById(`${prefix}_location`).value = `${lat}, ${lng}`;
-                
-                locationBtn.disabled = false;
-                locationBtn.innerHTML = '<i class="fas fa-location-arrow"></i> Get Current Location';
-                
-                this.showSuccess('Location updated successfully');
-            },
-            (error) => {
-                locationBtn.disabled = false;
-                locationBtn.innerHTML = '<i class="fas fa-location-arrow"></i> Get Current Location';
-                
-                let message = 'Failed to get location';
-                switch(error.code) {
-                    case error.PERMISSION_DENIED:
-                        message = 'Location access denied by user';
-                        break;
-                    case error.POSITION_UNAVAILABLE:
-                        message = 'Location information unavailable';
-                        break;
-                    case error.TIMEOUT:
-                        message = 'Location request timed out';
-                        break;
+        const mapContainerId = 'locationPickerMap';
+        const initMap = (center) => {   
+            try {
+                if (window.__locationPickerMap) {
+                    window.__locationPickerMap.remove();
+                    window.__locationPickerMap = null;
                 }
-                this.showError(message);
+                const map = new maplibregl.Map({
+                    container: mapContainerId,
+                    style: 'https://tiles.openfreemap.org/styles/bright',
+                    center: center,
+                    zoom: 19
+                });
+                map.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+                let marker = null;
+                const placeMarker = (lngLat) => {
+                    if (marker) marker.remove();
+                    marker = new maplibregl.Marker({ color: '#e11d48' }).setLngLat(lngLat).addTo(map);
+                };
+
+                map.on('click', (e) => {
+                    const lngLat = [e.lngLat.lng, e.lngLat.lat];
+                    placeMarker(lngLat);
+                    // Confirm selection
+                    const ok = confirm(`Use this meeting place?\nLatitude: ${lngLat[1].toFixed(6)}\nLongitude: ${lngLat[0].toFixed(6)}`);
+                    if (ok) {
+                        const latInputId = prefix === 'offer' ? 'offer_meeting_latitude' : 'edit_offer_meeting_latitude';
+                        const lngInputId = prefix === 'offer' ? 'offer_meeting_longitude' : 'edit_offer_meeting_longitude';
+                        document.getElementById(latInputId).value = lngLat[1];
+                        document.getElementById(lngInputId).value = lngLat[0];
+						// Close second modal and reopen first (per requested behavior)
+						modalEl.classList.remove('show');
+						modalEl.style.display = 'none';
+						if (parentModalEl) {
+							parentModalEl.style.display = 'block';
+							parentModalEl.classList.add('show');
+						}
+                        CustomToast.show('success', 'Meeting location set');
+                    }
+                });
+
+                window.__locationPickerMap = map;
+                setTimeout(() => map.resize(), 200);
+            } catch (e) {
+                console.error('Failed to initialize location picker map', e);
+                this.showError('Failed to initialize map');
             }
-        );
+        };
+
+		// Try to center at user's current position; fallback to default center
+		if (navigator.geolocation) {
+			if (triggerBtn) {
+				triggerBtn.disabled = true;
+				triggerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Locating...';
+			}
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+					if (triggerBtn) {
+						triggerBtn.disabled = false;
+						triggerBtn.innerHTML = '<i class=\"fas fa-location-arrow\"></i> Pick Meeting Location';
+					}
+                    initMap([pos.coords.longitude, pos.coords.latitude]);
+                },
+                () => {
+					if (triggerBtn) {
+						triggerBtn.disabled = false;
+						triggerBtn.innerHTML = '<i class=\"fas fa-location-arrow\"></i> Pick Meeting Location';
+					}
+                    initMap([120.9842, 14.5995]);
+                },
+                { enableHighAccuracy: true, timeout: 8000 }
+            );
+        } else {
+            initMap([120.9842, 14.5995]);
+        }
     }
 
     showSuccess(message) {
@@ -394,9 +529,96 @@ class OffersManager {
         // You can implement a toast notification system here
         alert('Error: ' + message);
     }
+
+    // Helper function to clean up modal backdrops
+    cleanupModalBackdrops() {
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        backdrops.forEach(backdrop => {
+            backdrop.remove();
+        });
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+    }
+
+    // Test function to verify modal functionality
+    testModal() {
+        console.log('Testing modal functionality...');
+        const modalElement = document.getElementById('editOfferModal');
+        console.log('Modal element found:', !!modalElement);
+        if (modalElement) {
+            console.log('Modal element:', modalElement);
+            console.log('Bootstrap available:', typeof bootstrap !== 'undefined');
+            if (typeof bootstrap !== 'undefined') {
+                console.log('Bootstrap.Modal available:', typeof bootstrap.Modal !== 'undefined');
+            }
+        }
+    }
+
+    // Debug function to check offers data
+    debugOffers() {
+        console.log('=== OFFERS DEBUG INFO ===');
+        console.log('Offers array:', this.offers);
+        console.log('Offers count:', this.offers.length);
+        console.log('Offer IDs and types:', this.offers.map(o => ({ id: o.id, type: typeof o.id })));
+        console.log('OffersManager instance:', this);
+        console.log('========================');
+    }
+
+    // Test function to manually test offer lookup
+    testOfferLookup(id) {
+        console.log('Testing offer lookup for ID:', id);
+        console.log('Available offers:', this.offers.map(o => ({ id: o.id, type: typeof o.id })));
+        
+        const numericId = parseInt(id);
+        const stringId = String(id);
+        
+        const offer = this.offers.find(o => {
+            const oId = o.id;
+            const oIdNum = parseInt(oId);
+            const oIdStr = String(oId);
+            
+            return oId === id || 
+                   oId === numericId || 
+                   oId === stringId ||
+                   oIdNum === id ||
+                   oIdNum === numericId ||
+                   oIdStr === stringId;
+        });
+        
+        console.log('Found offer:', offer);
+        return offer;
+    }
 }
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     window.offersManager = new OffersManager();
+    
+    // Make test function globally available for debugging
+    window.testOffersModal = () => {
+        if (window.offersManager) {
+            window.offersManager.testModal();
+        } else {
+            console.error('OffersManager not initialized');
+        }
+    };
+
+    // Make debug function globally available
+    window.debugOffers = () => {
+        if (window.offersManager) {
+            window.offersManager.debugOffers();
+        } else {
+            console.error('OffersManager not initialized');
+        }
+    };
+
+    // Make test lookup function globally available
+    window.testOfferLookup = (id) => {
+        if (window.offersManager) {
+            return window.offersManager.testOfferLookup(id);
+        } else {
+            console.error('OffersManager not initialized');
+        }
+    };
 });

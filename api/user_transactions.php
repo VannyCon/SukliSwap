@@ -27,9 +27,9 @@ $middleware->requireAuth(function() {
     error_log("Inside authenticated callback");
     global $transactionService;
     
-    // Handle different actions based on HTTP method
+    // Handle all actions via POST method
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
-        $action = $_POST['action'] ?? '';
+        $action = $_GET['action'] ?? '';
         
         switch ($action) {
             case 'createTransaction':
@@ -90,22 +90,6 @@ $middleware->requireAuth(function() {
                 echo json_encode($result);
                 break;
                 
-            default:
-                http_response_code(400);
-                echo json_encode([
-                    'success' => false, 
-                    'message' => 'Invalid action',
-                    'available_actions' => [
-                        'createTransaction', 'completeTransaction', 'reportDispute'
-                    ]
-                ]);
-                break;
-        }
-    } elseif ($_SERVER["REQUEST_METHOD"] == "GET") {
-        $action = $_GET['action'] ?? '';
-        error_log("GET action received: " . $action);
-        
-        switch ($action) {
             case 'getMyTransactions':
                 $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
                 $size = isset($_GET['size']) ? intval($_GET['size']) : 12;
@@ -154,21 +138,6 @@ $middleware->requireAuth(function() {
                 echo json_encode($result);
                 break;
                 
-            default:
-                http_response_code(400);
-                echo json_encode([
-                    'success' => false, 
-                    'message' => 'Invalid action',
-                    'available_actions' => [
-                        'getMyTransactions', 'getTransactionById', 'getTransactionStats'
-                    ]
-                ]);
-                break;
-        }
-    } elseif ($_SERVER["REQUEST_METHOD"] == "PUT") {
-        $action = $_POST['action'] ?? '';
-        
-        switch ($action) {
             case 'updateTransactionStatus':
                 $transactionId = $_POST['transaction_id'] ?? '';
                 $status = $_POST['status'] ?? '';
@@ -189,23 +158,8 @@ $middleware->requireAuth(function() {
                 echo json_encode($result);
                 break;
                 
-            default:
-                http_response_code(400);
-                echo json_encode([
-                    'success' => false, 
-                    'message' => 'Invalid action',
-                    'available_actions' => [
-                        'updateTransactionStatus'
-                    ]
-                ]);
-                break;
-        }
-    } elseif ($_SERVER["REQUEST_METHOD"] == "DELETE") {
-        $action = $_POST['action'] ?? '';
-        
-        switch ($action) {
             case 'cancelTransaction':
-                $transactionId = $_POST['transaction_id'] ?? '';
+                $transactionId = $_GET['transaction_id'] ?? '';
                 if ($transactionId) {
                     $result = $transactionService->cancelTransaction($transactionId, $GLOBALS['current_user']['id']);
                     echo json_encode($result);
@@ -224,7 +178,9 @@ $middleware->requireAuth(function() {
                     'success' => false, 
                     'message' => 'Invalid action',
                     'available_actions' => [
-                        'cancelTransaction'
+                        'createTransaction', 'completeTransaction', 'reportDispute',
+                        'getMyTransactions', 'getTransactionById', 'getTransactionStats',
+                        'updateTransactionStatus', 'cancelTransaction'
                     ]
                 ]);
                 break;
@@ -234,7 +190,7 @@ $middleware->requireAuth(function() {
         echo json_encode([
             'success' => false,
             'message' => 'Method not allowed',
-            'allowed_methods' => ['GET', 'POST', 'PUT', 'DELETE']
+            'allowed_methods' => ['POST']
         ]);
     }
 });

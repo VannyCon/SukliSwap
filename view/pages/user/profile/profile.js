@@ -323,7 +323,7 @@ class ProfileManager {
                 locationBtn.disabled = false;
                 locationBtn.innerHTML = '<i class="fas fa-location-arrow"></i> Get Current Location';
                 
-                this.showSuccess('Location updated successfully');
+                CustomToast.show('success', 'Location updated successfully!');
             },
             (error) => {
                 locationBtn.disabled = false;

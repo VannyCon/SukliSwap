@@ -27,9 +27,9 @@ $middleware->requireAuth(function() {
     error_log("Inside authenticated callback");
     global $profileService;
     
-    // Handle different actions based on HTTP method
+    // Handle all actions via POST method
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
-        $action = $_POST['action'] ?? '';
+        $action = $_GET['action'] ?? '';
         
         switch ($action) {
             case 'uploadProfilePicture':
@@ -43,22 +43,6 @@ $middleware->requireAuth(function() {
                 echo json_encode($result);
                 break;
                 
-            default:
-                http_response_code(400);
-                echo json_encode([
-                    'success' => false, 
-                    'message' => 'Invalid action',
-                    'available_actions' => [
-                        'uploadProfilePicture'
-                    ]
-                ]);
-                break;
-        }
-    } elseif ($_SERVER["REQUEST_METHOD"] == "GET") {
-        $action = $_GET['action'] ?? '';
-        error_log("GET action received: " . $action);
-        
-        switch ($action) {
             case 'getUserProfile':
                 $result = $profileService->getUserProfile($GLOBALS['current_user']['id']);
                 echo json_encode($result);
@@ -75,21 +59,6 @@ $middleware->requireAuth(function() {
                 echo json_encode($result);
                 break;
                 
-            default:
-                http_response_code(400);
-                echo json_encode([
-                    'success' => false, 
-                    'message' => 'Invalid action',
-                    'available_actions' => [
-                        'getUserProfile', 'getUserStats', 'getUserActivity'
-                    ]
-                ]);
-                break;
-        }
-    } elseif ($_SERVER["REQUEST_METHOD"] == "PUT") {
-        $action = $_POST['action'] ?? '';
-        
-        switch ($action) {
             case 'updateUserProfile':
                 $data = $profileService->cleanArray($_POST);
                 $result = $profileService->updateUserProfile($GLOBALS['current_user']['id'], $data);
@@ -114,21 +83,6 @@ $middleware->requireAuth(function() {
                 echo json_encode($result);
                 break;
                 
-            default:
-                http_response_code(400);
-                echo json_encode([
-                    'success' => false, 
-                    'message' => 'Invalid action',
-                    'available_actions' => [
-                        'updateUserProfile', 'changePassword'
-                    ]
-                ]);
-                break;
-        }
-    } elseif ($_SERVER["REQUEST_METHOD"] == "DELETE") {
-        $action = $_POST['action'] ?? '';
-        
-        switch ($action) {
             case 'deleteUserAccount':
                 $confirmation = $_POST['confirmation'] ?? '';
                 
@@ -148,7 +102,8 @@ $middleware->requireAuth(function() {
                     'success' => false, 
                     'message' => 'Invalid action',
                     'available_actions' => [
-                        'deleteUserAccount'
+                        'uploadProfilePicture', 'getUserProfile', 'getUserStats', 'getUserActivity',
+                        'updateUserProfile', 'changePassword', 'deleteUserAccount'
                     ]
                 ]);
                 break;
@@ -158,7 +113,7 @@ $middleware->requireAuth(function() {
         echo json_encode([
             'success' => false,
             'message' => 'Method not allowed',
-            'allowed_methods' => ['GET', 'POST', 'PUT', 'DELETE']
+            'allowed_methods' => ['POST']
         ]);
     }
 });

@@ -91,12 +91,12 @@
                         </div>
                         <div class="card-body">
                             <div class="d-grid gap-2">
-                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createRequestModal">
+                                <!-- <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createRequestModal">
                                     <i class="fas fa-plus"></i> Create Coin Request
                                 </button>
                                 <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createOfferModal">
                                     <i class="fas fa-plus"></i> Create Coin Offer
-                                </button>
+                                </button> -->
                                 <button class="btn btn-info" onclick="coinExchangeManager.loadActiveRequests()">
                                     <i class="fas fa-search"></i> Browse Requests
                                 </button>

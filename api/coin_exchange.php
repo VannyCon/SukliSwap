@@ -57,6 +57,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
             ]);
             exit;
 
+
         case 'getActiveOffers':
             $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
             $size = isset($_GET['size']) ? intval($_GET['size']) : 12;
@@ -107,7 +108,7 @@ $middleware->requireAuth(function() {
     
     // Handle different actions based on HTTP method
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
-        $action = $_POST['action'] ?? '';
+        $action = $_GET['action'] ?? '';
         
         switch ($action) {
             case 'createCoinRequest':
@@ -180,6 +181,50 @@ $middleware->requireAuth(function() {
         error_log("GET action received: " . $action);
         
         switch ($action) {
+            case 'getAvailableRequests':
+                $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
+                $size = isset($_GET['size']) ? intval($_GET['size']) : 12;
+                $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+                $status = isset($_GET['status']) ? trim($_GET['status']) : 'active';
+                $userId = isset($GLOBALS['current_user']['id']) ? intval($GLOBALS['current_user']['id']) : null;
+                $requests = $coinExchangeService->getAvailableCoinRequests($page, $size, $search, $status, $userId);
+                $total = $coinExchangeService->countCoinRequests($search, $status);
+                $totalPages = $size > 0 ? (int)ceil($total / $size) : 1;
+                echo json_encode([
+                    'success' => true,
+                    'data' => $requests,
+                    'meta' => [
+                        'page' => $page,
+                        'size' => $size,
+                        'total' => $total,
+                        'totalPages' => $totalPages,
+                        'search' => $search
+                    ]
+                ]);
+                break;
+
+            case 'getAvailableOffers':
+                $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
+                $size = isset($_GET['size']) ? intval($_GET['size']) : 12;
+                $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+                $status = isset($_GET['status']) ? trim($_GET['status']) : 'active';
+                $userId = isset($GLOBALS['current_user']['id']) ? intval($GLOBALS['current_user']['id']) : null;
+                $offers = $coinExchangeService->getAvailableCoinOffers($page, $size, $search, $status, $userId);
+                $total = $coinExchangeService->countCoinOffers($search, $status);
+                $totalPages = $size > 0 ? (int)ceil($total / $size) : 1;
+                echo json_encode([
+                    'success' => true,
+                    'data' => $offers,
+                    'meta' => [
+                        'page' => $page,
+                        'size' => $size,
+                        'total' => $total,
+                        'totalPages' => $totalPages,
+                        'search' => $search
+                    ]
+                ]);
+                break;
+
             case 'getMyRequests':
                 $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
                 $size = isset($_GET['size']) ? intval($_GET['size']) : 12;

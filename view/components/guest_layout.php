@@ -296,6 +296,7 @@ body {
         <div class="loading-spinner"></div>
     </div>
     <!-- Page-specific JS -->
+    <script src="../../../js/notifications.js"></script>
     
     <!-- Page-specific JS -->
     <?php if (isset($page_js)): ?>

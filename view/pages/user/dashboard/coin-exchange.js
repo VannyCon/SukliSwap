@@ -193,7 +193,7 @@ class CoinExchangeManager {
 
     async loadActiveRequests() {
         try {
-            const response = await axios.get(`${coinExchangeAPI}?action=getActiveRequests`, {
+            const response = await axios.get(`${coinExchangeAPI}?action=getAvailableRequests`, {
                 headers: headerAPI
             });
 
@@ -210,7 +210,7 @@ class CoinExchangeManager {
 
     async loadActiveOffers() {
         try {
-            const response = await axios.get(`${coinExchangeAPI}?action=getActiveOffers`, {
+            const response = await axios.get(`${coinExchangeAPI}?action=getAvailableOffers`, {
                 headers: headerAPI
             });
 
@@ -864,14 +864,189 @@ class CoinExchangeManager {
         }
     }
 
-    viewRequestDetails(requestId) {
-        // Implement view request details
-        console.log('View request details:', requestId);
+    // ============ DETAILS MODALS ============
+
+    async viewRequestDetails(requestId) {
+        try {
+            let request = null;
+            // Try caches first
+            request = (this.activeRequests || []).find(r => Number(r.id) === Number(requestId))
+                || (this.userRequests || []).find(r => Number(r.id) === Number(requestId));
+
+            // Fallback: fetch latest active requests and search
+            if (!request) {
+                const response = await axios.get(`${coinExchangeAPI}?action=getActiveRequests&size=100`, {
+                    headers: headerAPI
+                });
+                if (response.data && response.data.success) {
+                    const list = response.data.data || [];
+                    request = list.find(r => Number(r.id) === Number(requestId));
+                }
+            }
+
+            if (!request) {
+                CustomToast?.show?.('error', 'Request not found');
+                return;
+            }
+
+            const bodyHtml = `
+                <div class="mb-2">
+                    <div><strong>Denomination:</strong> ₱${request.denomination ?? ''}</div>
+                    <div><strong>Quantity:</strong> ${request.quantity ?? ''}</div>
+                    <div><strong>From:</strong> ${request.username ?? request.requestor_username ?? 'N/A'}</div>
+                    <div><strong>Business:</strong> ${request.business_name ?? 'N/A'}</div>
+                    <div><strong>Status:</strong> ${request.status ?? 'active'}</div>
+                    <div><strong>Location:</strong> ${request.preferred_meeting_location || 'Not specified'}</div>
+                    ${request.notes ? `<div class="mt-2"><strong>Notes:</strong><br>${request.notes}</div>` : ''}
+                    ${request.meeting_latitude && request.meeting_longitude ?
+                        `<div class=\"mt-2\"><strong>Coordinates:</strong> ${request.meeting_latitude}, ${request.meeting_longitude}</div>
+                         <div id=\"request-map-${request.id}\" style=\"height: 240px; border-radius: 8px; overflow: hidden; margin-top: 8px;\"></div>` : ''}
+                    <div class="text-muted mt-2">${this.formatDate(request.created_at)}</div>
+                </div>
+            `;
+
+            const footerHtml = `
+                <button type="button" class="btn btn-success" onclick="sendRequest(${request.id})">Send Request</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            `;
+
+            this.showDetailsModal('Request Details', bodyHtml, footerHtml);
+
+            // Initialize a small map if coordinates are available
+            if (request.meeting_latitude && request.meeting_longitude && typeof maplibregl !== 'undefined') {
+                const containerId = `request-map-${request.id}`;
+                const lat = Number(request.meeting_latitude);
+                const lng = Number(request.meeting_longitude);
+                // Delay until modal has rendered
+                setTimeout(() => { this.initMiniMap(containerId, lat, lng, 19); }, 100);
+            }
+        } catch (err) {
+            console.error('Failed to show request details:', err);
+            CustomToast?.show?.('error', 'Failed to load request details');
+        }
     }
 
-    viewOfferDetails(offerId) {
-        // Implement view offer details
-        console.log('View offer details:', offerId);
+    async viewOfferDetails(offerId) {
+        try {
+            let offer = null;
+            // Try caches first
+            offer = (this.activeOffers || []).find(o => Number(o.id) === Number(offerId))
+                || (this.userOffers || []).find(o => Number(o.id) === Number(offerId));
+
+            // Fallback: fetch latest active offers and search
+            if (!offer) {
+                const response = await axios.get(`${coinExchangeAPI}?action=getActiveOffers&size=100`, {
+                    headers: headerAPI
+                });
+                if (response.data && response.data.success) {
+                    const list = response.data.data || [];
+                    offer = list.find(o => Number(o.id) === Number(offerId));
+                }
+            }
+
+            if (!offer) {
+                CustomToast?.show?.('error', 'Offer not found');
+                return;
+            }
+
+            const bodyHtml = `
+                <div class="mb-2">
+                    <div><strong>Denomination:</strong> ₱${offer.denomination ?? ''}</div>
+                    <div><strong>Quantity:</strong> ${offer.quantity ?? ''}</div>
+                    <div><strong>From:</strong> ${offer.username ?? offer.offeror_username ?? 'N/A'}</div>
+                    <div><strong>Business:</strong> ${offer.business_name ?? 'N/A'}</div>
+                    <div><strong>Status:</strong> ${offer.status ?? 'active'}</div>
+                    <div><strong>Location:</strong> ${offer.preferred_meeting_location || 'Not specified'}</div>
+                    ${offer.notes ? `<div class="mt-2"><strong>Notes:</strong><br>${offer.notes}</div>` : ''}
+                    ${offer.meeting_latitude && offer.meeting_longitude ?
+                        `<div class=\"mt-2\"><strong>Coordinates:</strong> ${offer.meeting_latitude}, ${offer.meeting_longitude}</div>
+                         <div id=\"offer-map-${offer.id}\" style=\"height: 240px; border-radius: 8px; overflow: hidden; margin-top: 8px;\"></div>` : ''}
+                    <div class="text-muted mt-2">${this.formatDate(offer.created_at)}</div>
+                </div>
+            `;
+
+            const footerHtml = `
+                <button type="button" class="btn btn-success" onclick="sendOffer(${offer.id})">Send Offer</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            `;
+
+            this.showDetailsModal('Offer Details', bodyHtml, footerHtml);
+
+            // Initialize a small map if coordinates are available
+            if (offer.meeting_latitude && offer.meeting_longitude && typeof maplibregl !== 'undefined') {
+                const containerId = `offer-map-${offer.id}`;
+                const lat = Number(offer.meeting_latitude);
+                const lng = Number(offer.meeting_longitude);
+                // Delay until modal has rendered
+                setTimeout(() => { this.initMiniMap(containerId, lat, lng, 19); }, 100);
+            }
+        } catch (err) {
+            console.error('Failed to show offer details:', err);
+            CustomToast?.show?.('error', 'Failed to load offer details');
+        }
+    }
+
+    async findMatchesForRequest(requestId) {
+        try {
+            const response = await axios.get(`${coinExchangeAPI}?action=findMatches&request_id=${requestId}`, {
+                headers: headerAPI
+            });
+            if (response.data && response.data.success) {
+                const count = response.data.matches_count ?? 0;
+                CustomToast?.show?.('success', `Found ${count} matches`);
+                await this.loadUserMatches();
+            } else {
+                CustomToast?.show?.('error', response.data?.message || 'Failed to find matches');
+            }
+        } catch (err) {
+            console.error('findMatchesForRequest failed:', err);
+            CustomToast?.show?.('error', 'Failed to find matches');
+        }
+    }
+
+    showDetailsModal(title, bodyHtml, footerHtml = '') {
+        const modal = document.createElement('div');
+        modal.className = 'modal fade';
+        modal.setAttribute('tabindex', '-1');
+        modal.innerHTML = `
+            <div class="modal-dialog modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">${title}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">${bodyHtml}</div>
+                    <div class="modal-footer">${footerHtml}</div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        const bsModal = new bootstrap.Modal(modal);
+        modal.addEventListener('hidden.bs.modal', () => {
+            modal.remove();
+        });
+        bsModal.show();
+    }
+
+    initMiniMap(containerId, lat, lng, zoom = 19) {
+        try {
+            const container = document.getElementById(containerId);
+            if (!container || typeof maplibregl === 'undefined') return;
+            const map = new maplibregl.Map({
+                container: containerId,
+                style: 'https://tiles.openfreemap.org/styles/bright',
+                center: [lng, lat],
+                zoom: zoom
+            });
+            map.addControl(new maplibregl.NavigationControl(), 'top-right');
+            map.on('load', () => {
+                new maplibregl.Marker({ color: '#e11d48' }).setLngLat([lng, lat]).addTo(map);
+            });
+            // Resize map when modal layout settles
+            setTimeout(() => map.resize(), 300);
+        } catch (e) {
+            console.warn('Mini map init failed', e);
+        }
     }
 }
 // Global wrapper functions for HTML onclick handlers
@@ -938,6 +1113,16 @@ window.viewRequestDetails = function(requestId) {
 window.viewOfferDetails = function(offerId) {
     if (window.coinExchangeManager) {
         return window.coinExchangeManager.viewOfferDetails(offerId);
+    }
+};
+
+//  * Find matches for a request
+//  * @param {number} requestId - The ID of the request to find matches for
+//  * @returns {Promise<void>}
+//  */
+window.findMatchesForRequest = function(requestId) {
+    if (window.coinExchangeManager) {
+        return window.coinExchangeManager.findMatchesForRequest(requestId);
     }
 };
 

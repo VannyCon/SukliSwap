@@ -56,13 +56,21 @@
                         <span class="text nav-text">Transactions</span>
                     </a>
                 </li>
-                
+
                 <!-- <li class="nav-link">
-                    <a href="../../admin/annotations/">
-                        <i class='fas fa-map-marker-alt icon'></i>
-                        <span class="text nav-text">Annotations</span>
+                    <a href="../../admin/notifications/">
+                        <i class='fas fa-bell icon'></i>
+                        <span class="text nav-text">Notifications</span>
+                        <span id="adminNotifBadge" class="badge bg-danger ms-2" style="display:none;">0</span>
                     </a>
                 </li> -->
+                
+                <li class="nav-link">
+                    <a href="../../admin/safe_places/">
+                        <i class='fas fa-map-marker-alt icon'></i>
+                        <span class="text nav-text">Safe Places</span>
+                    </a>
+                </li>
                 
                 <li class="nav-link">
                     <a href="../../admin/user_management/">
@@ -78,12 +86,12 @@
                     </a>
                 </li>
                 
-                <li class="nav-link">
+                <!-- <li class="nav-link">
                     <a href="../../admin/analytics/">
                         <i class='fas fa-chart-bar icon'></i>
                         <span class="text nav-text">Analytics</span>
                     </a>
-                </li>
+                </li> -->
 
                 <!-- <li class="nav-link">
                     <a href="../../admin/reports/">
@@ -122,6 +130,13 @@
                     <a href="../../user/transactions/">
                         <i class='fas fa-exchange-alt icon'></i>
                         <span class="text nav-text">My Transactions</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="../../user/notifications/">
+                        <i class='fas fa-bell icon'></i>
+                        <span class="text nav-text">Notifications</span>
+                        <span id="userNotifBadge" class="badge bg-danger ms-2" style="display:none;">0</span>
                     </a>
                 </li>
                 
@@ -438,5 +453,38 @@ function clearAuthData() {
 // Initialize sidebar when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     new SidebarManager();
+    // Initialize notification badges
+    try {
+        const updateBadge = (el, count) => {
+            if (!el) return;
+            if (count > 0) {
+                el.textContent = String(count > 99 ? '99+' : count);
+                el.style.display = '';
+            } else {
+                el.style.display = 'none';
+            }
+        };
+
+        const adminBadge = document.getElementById('adminNotifBadge');
+        const userBadge = document.getElementById('userNotifBadge');
+
+        const refreshCounts = async () => {
+            if (window.notificationClient && typeof window.notificationClient.getUnreadCount === 'function') {
+                const count = await window.notificationClient.getUnreadCount(100);
+                updateBadge(adminBadge, count);
+                updateBadge(userBadge, count);
+            }
+        };
+
+        // Initial load after a short delay to allow auth
+        setTimeout(refreshCounts, 500);
+
+        // Increment badge on each new notification
+        window.addEventListener('app:notification', () => {
+            // Lazy refresh to avoid drift
+            refreshCounts();
+        });
+
+    } catch (e) { console.warn('Notifications badge init failed', e); }
 });
 </script>
