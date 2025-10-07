@@ -145,9 +145,9 @@ class RequestsManager {
             <div class="card mb-3">
                 <div class="card-body">
                     <div class="row align-items-center">
-                        <div class="col-md-1">
-                            <img src="${request.coin_image || '/assets/images/default-coin.png'}" 
-                                 alt="${request.coin_description}" class="img-thumbnail" style="width: 50px; height: 50px;">
+                        <div class="col-md-1 justify-content-center text-center">
+                            <img src="../../../../${request.coin_image_path || '/assets/images/default-coin.png'}" 
+                                 alt="${request.description}" class=""s style="width: 50px; height: 50px;">
                         </div>
                         <div class="col-md-3">
                             <h6 class="mb-1">${request.coin_description}</h6>
@@ -409,8 +409,6 @@ class RequestsManager {
                         <td>${o.username || (o.first_name ? o.first_name + ' ' + (o.last_name||'') : 'User '+o.offeror_id)}</td>
                         <td>${o.requested_quantity}</td>
                         <td>${o.message || ''}</td>
-                        <td>${o.my_latitude ? `${Number(o.my_latitude).toFixed(5)}, ${Number(o.my_longitude).toFixed(5)}` : ''}</td>
-                        <td>${o.scheduled_time ? new Date(o.scheduled_time).toLocaleString() : ''}</td>
                         <td><span class="badge bg-${o.status == 'pending' ? 'warning' : o.status == 'accepted' ? 'success' : 'danger'}">${o.status}</span></td>
                         <td>
                             ${o.status === 'pending' ? `

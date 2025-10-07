@@ -142,12 +142,12 @@ class OffersManager {
             <div class="card mb-3">
                 <div class="card-body">
                     <div class="row align-items-center">
-                        <div class="col-md-1">
-                            <img src="${offer.coin_image || '/assets/images/default-coin.png'}" 
-                                 alt="${offer.coin_description}" class="img-thumbnail" style="width: 50px; height: 50px;">
+                        <div class="col-md-1 justify-content-center text-center">
+                            <img src="../../../../${offer.coin_image_path || '/assets/images/default-coin.png'}" 
+                                 alt="${offer.description}" class=""s style="width: 50px; height: 50px;">
                         </div>
                         <div class="col-md-3">
-                            <h6 class="mb-1">${offer.coin_description}</h6>
+                            <h6 class="mb-1">${offer.description}</h6>
                             <small class="text-muted">Value: ₱${offer.denomination}</small>
                         </div>
                         <div class="col-md-2">
@@ -410,8 +410,6 @@ class OffersManager {
                         <td>${r.username || (r.first_name ? r.first_name + ' ' + (r.last_name||'') : 'User '+r.requestor_id)}</td>
                         <td>${r.offered_quantity}</td>
                         <td>${r.message || ''}</td>
-                        <td>${r.my_latitude ? `${Number(r.my_latitude).toFixed(5)}, ${Number(r.my_longitude).toFixed(5)}` : ''}</td>
-                        <td>${r.scheduled_time ? new Date(r.scheduled_time).toLocaleString() : ''}</td>
                         <td><span class="badge bg-${r.status == 'pending' ? 'warning' : r.status == 'accepted' ? 'success' : 'danger'}">${r.status}</span></td>
                         <td>
                             ${r.status === 'pending' ? `

@@ -264,8 +264,6 @@
                                 <th>User</th>
                                 <th>Quantity</th>
                                 <th>Message</th>
-                                <th>My Location</th>
-                                <th>Schedule</th>
                                 <th>Status</th>
                                 <th style="width: 120px;">Actions</th>
                             </tr>

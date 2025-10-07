@@ -90,37 +90,9 @@ $middleware->requireAuth(function() {
                 echo json_encode($result);
                 break;
                 
-            case 'getMyTransactions':
-                $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
-                $size = isset($_GET['size']) ? intval($_GET['size']) : 12;
-                $search = isset($_GET['search']) ? trim($_GET['search']) : '';
-                $status = isset($_GET['status']) ? trim($_GET['status']) : '';
-                $type = isset($_GET['type']) ? trim($_GET['type']) : '';
-                $dateFrom = isset($_GET['date_from']) ? trim($_GET['date_from']) : '';
-                $dateTo = isset($_GET['date_to']) ? trim($_GET['date_to']) : '';
-                
-                $filters = [
-                    'status' => $status,
-                    'type' => $type,
-                    'date_from' => $dateFrom,
-                    'date_to' => $dateTo,
-                    'search' => $search
-                ];
-                
-                $result = $transactionService->getUserTransactions($GLOBALS['current_user']['id'], $filters);
-                echo json_encode([
-                    'success' => true,
-                    'data' => $result['data'] ?? $result,
-                    'meta' => [
-                        'page' => $page,
-                        'size' => $size,
-                        'search' => $search
-                    ]
-                ]);
-                break;
 
             case 'getTransactionById':
-                $transactionId = $_GET['transaction_id'] ?? '';
+                $transactionId = $_GET['transaction_id'] ?? $_GET['id'] ?? '';
                 if ($transactionId) {
                     $result = $transactionService->getTransactionById($transactionId, $GLOBALS['current_user']['id']);
                     echo json_encode($result);
@@ -159,7 +131,7 @@ $middleware->requireAuth(function() {
                 break;
                 
             case 'cancelTransaction':
-                $transactionId = $_GET['transaction_id'] ?? '';
+                $transactionId = $_GET['transaction_id'] ?? $_GET['id'] ?? '';
                 if ($transactionId) {
                     $result = $transactionService->cancelTransaction($transactionId, $GLOBALS['current_user']['id']);
                     echo json_encode($result);
@@ -181,6 +153,38 @@ $middleware->requireAuth(function() {
                         'createTransaction', 'completeTransaction', 'reportDispute',
                         'getMyTransactions', 'getTransactionById', 'getTransactionStats',
                         'updateTransactionStatus', 'cancelTransaction'
+                    ]
+                ]);
+                break;
+        }
+    } elseif ($_SERVER["REQUEST_METHOD"] == "GET") {
+        $action = $_GET['action'] ?? '';
+        switch ($action) {
+            case 'getMyTransactions':
+                $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
+                $size = isset($_GET['size']) ? intval($_GET['size']) : 12;
+                $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+                $status = isset($_GET['status']) ? trim($_GET['status']) : '';
+                $type = isset($_GET['type']) ? trim($_GET['type']) : '';
+                $dateFrom = isset($_GET['date_from']) ? trim($_GET['date_from']) : '';
+                $dateTo = isset($_GET['date_to']) ? trim($_GET['date_to']) : '';
+                
+                $filters = [
+                    'status' => $status,
+                    'type' => $type,
+                    'date_from' => $dateFrom,
+                    'date_to' => $dateTo,
+                    'search' => $search
+                ];
+                
+                $result = $transactionService->getUserTransactions($GLOBALS['current_user']['id'], $filters);
+                echo json_encode([
+                    'success' => true,
+                    'data' => $result['data'] ?? $result,
+                    'meta' => [
+                        'page' => $page,
+                        'size' => $size,
+                        'search' => $search
                     ]
                 ]);
                 break;

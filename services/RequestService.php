@@ -49,7 +49,7 @@ class RequestService extends config {
      */
     public function getUserRequests($userId, $filters = []) {
         try {
-            $sql = "SELECT cr.*, ct.denomination, ct.description 
+            $sql = "SELECT cr.*, ct.denomination, ct.description, ct.image_path as coin_image_path
                     FROM tbl_coin_requests cr 
                     JOIN tbl_coin_types ct ON cr.coin_type_id = ct.id 
                     WHERE cr.user_id = ?";

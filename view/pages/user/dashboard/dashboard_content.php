@@ -33,10 +33,10 @@
                         <label for="tro_message" class="form-label">Message (optional)</label>
                         <textarea class="form-control" id="tro_message" name="message" rows="2"></textarea>
                     </div>
-                    <div class="mb-3">
+                    <!-- <div class="mb-3">
                         <label for="tro_schedule" class="form-label">Schedule (optional)</label>
                         <input type="datetime-local" class="form-control" id="tro_schedule" name="scheduled_time">
-                    </div>
+                    </div> -->
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -70,10 +70,10 @@
                         <label for="trr_message" class="form-label">Message (optional)</label>
                         <textarea class="form-control" id="trr_message" name="message" rows="2"></textarea>
                     </div>
-                    <div class="mb-3">
+                    <!-- <div class="mb-3">
                         <label for="trr_schedule" class="form-label">Schedule (optional)</label>
                         <input type="datetime-local" class="form-control" id="trr_schedule" name="scheduled_time">
-                    </div>
+                    </div> -->
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

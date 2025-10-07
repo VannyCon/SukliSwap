@@ -11,6 +11,7 @@ class TransactionsManager {
         headerAPI = authManager.API_CONFIG.getHeaders();
         formHeaderAPI = authManager.API_CONFIG.getFormHeaders();
         this.authManager = authManager;
+        this.currentUserId = this.authManager.getUser().id;
         this.transactions = [];
         this.filters = {
             status: '',
@@ -85,33 +86,28 @@ class TransactionsManager {
                     <div class="row align-items-center">
                         <div class="col-md-2">
                             <div class="text-center">
-                                <i class="fas fa-exchange-alt fa-2x text-primary"></i>
+                                <i class="fas fa-exchange-alt fa-2x ${this.getIconColor(transaction)}"></i>
                                 <div class="small text-muted">Transaction #${transaction.id}</div>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="row">
-                                <div class="col-6">
-                                    <strong>Request:</strong><br>
-                                    <small>${transaction.request_coin_name}</small><br>
-                                    <small class="text-muted">${transaction.request_quantity} pieces</small>
-                                </div>
-                                <div class="col-6">
-                                    <strong>Offer:</strong><br>
-                                    <small>${transaction.offer_coin_name}</small><br>
-                                    <small class="text-muted">${transaction.offer_quantity} pieces</small>
+                                <div class="col-12">
+                                    <strong>Coin Type:</strong><br>
+                                    <small>${transaction.denomination} ${transaction.description}</small><br>
+                                    <small class="text-muted">${transaction.quantity} pieces</small>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-2">
                             <div class="row">
                                 <div class="col-12">
-                                    <strong>Requester:</strong><br>
-                                    <small>${transaction.requester_name}</small>
+                                    <strong>Requestor:</strong><br>
+                                    <small>${transaction.requestor_first_name} ${transaction.requestor_last_name}</small><br>       
                                 </div>
                                 <div class="col-12 mt-1">
-                                    <strong>Offerer:</strong><br>
-                                    <small>${transaction.offerer_name}</small>
+                                    <strong>Offeror:</strong><br>
+                                    <small>${transaction.offeror_first_name} ${transaction.offeror_last_name}</small><br>
                                 </div>
                             </div>
                         </div>
@@ -190,6 +186,15 @@ class TransactionsManager {
         return colors[status] || 'secondary';
     }
 
+    getIconColor(transaction) {
+        // If current user is the offeror, show green icon
+        if (parseInt(transaction.offeror_id) === parseInt(this.currentUserId)) {
+            return 'text-success';
+        }
+        // Otherwise show blue (primary) icon
+        return 'text-primary';
+    }
+
     updateStats() {
         const stats = {
             total_transactions: this.transactions.length,
@@ -210,12 +215,12 @@ class TransactionsManager {
 
     async viewTransactionDetails(transactionId) {
         try {
-            const response = await axios.get(`${userTransactionsAPI}?action=getTransactionById&id=${transactionId}`, {
+            const response = await axios.get(`${userTransactionsAPI}?action=getTransactionById&transaction_id=${transactionId}`, {
                 headers: headerAPI
             });
 
             if (response.data.success) {
-                const data = await response.data.data;
+                const data = response.data.data;
                 this.showTransactionDetails(data);
             }
         } catch (error) {
@@ -229,18 +234,18 @@ class TransactionsManager {
         modalContent.innerHTML = `
             <div class="row">
                 <div class="col-md-6">
-                    <h6>Request Details</h6>
-                    <p><strong>Coin:</strong> ${transaction.request_coin_name}</p>
-                    <p><strong>Quantity:</strong> ${transaction.request_quantity} pieces</p>
-                    <p><strong>Requester:</strong> ${transaction.requester_name}</p>
-                    ${transaction.request_notes ? `<p><strong>Notes:</strong> ${transaction.request_notes}</p>` : ''}
+                    <h6>Transaction Details</h6>
+                    <p><strong>Coin:</strong> ${transaction.denomination} ${transaction.description}</p>
+                    <p><strong>Quantity:</strong> ${transaction.quantity} pieces</p>
+                    <p><strong>Transaction Type:</strong> ${transaction.isOffer === '1' ? 'Offer-based' : 'Request-based'}</p>
+                    ${transaction.description ? `<p><strong>Description:</strong> ${transaction.description}</p>` : ''}
                 </div>
                 <div class="col-md-6">
-                    <h6>Offer Details</h6>
-                    <p><strong>Coin:</strong> ${transaction.offer_coin_name}</p>
-                    <p><strong>Quantity:</strong> ${transaction.offer_quantity} pieces</p>
-                    <p><strong>Offerer:</strong> ${transaction.offerer_name}</p>
-                    ${transaction.offer_notes ? `<p><strong>Notes:</strong> ${transaction.offer_notes}</p>` : ''}
+                    <h6>Participants</h6>
+                    <p><strong>Requestor:</strong> ${transaction.requestor_first_name} ${transaction.requestor_last_name}</p>
+                    <p><strong>Requestor Username:</strong> @${transaction.requestor_username}</p>
+                    <p><strong>Offeror:</strong> ${transaction.offeror_first_name} ${transaction.offeror_last_name}</p>
+                    <p><strong>Offeror Username:</strong> @${transaction.offeror_username}</p>
                 </div>
             </div>
             <hr>
@@ -248,13 +253,15 @@ class TransactionsManager {
                 <div class="col-md-6">
                     <h6>Meeting Information</h6>
                     <p><strong>Location:</strong> ${transaction.meeting_location || 'To be determined'}</p>
+                    <p><strong>QR Code:</strong> ${transaction.qr_code}</p>
                     <p><strong>Status:</strong> <span class="badge bg-${this.getStatusColor(transaction.status)}">${transaction.status}</span></p>
                 </div>
                 <div class="col-md-6">
                     <h6>Timeline</h6>
                     <p><strong>Created:</strong> ${new Date(transaction.created_at).toLocaleString()}</p>
-                    ${transaction.completed_at ? `<p><strong>Completed:</strong> ${new Date(transaction.completed_at).toLocaleString()}</p>` : ''}
-                    ${transaction.rating ? `<p><strong>Rating:</strong> ${transaction.rating}/5 stars</p>` : ''}
+                    ${transaction.completion_time ? `<p><strong>Completed:</strong> ${new Date(transaction.completion_time).toLocaleString()}</p>` : ''}
+                    ${transaction.requestor_rating ? `<p><strong>Requestor Rating:</strong> ${transaction.requestor_rating}/5 stars</p>` : ''}
+                    ${transaction.offeror_rating ? `<p><strong>Offeror Rating:</strong> ${transaction.offeror_rating}/5 stars</p>` : ''}
                 </div>
             </div>
         `;
@@ -266,20 +273,21 @@ class TransactionsManager {
         if (!confirm('Are you sure you want to start this transaction?')) return;
 
         try {
-            const response = await axios.put(`${userTransactionsAPI}?action=updateTransactionStatus&id=${transactionId}`, {
-                status: 'in_progress'
-            }, {
+            const formData = new FormData();
+            formData.append('transaction_id', transactionId);
+            formData.append('status', 'in_progress');
+
+            const response = await axios.put(`${userTransactionsAPI}?action=updateTransactionStatus`, formData, {
                 headers: formHeaderAPI
             });
 
-
-            const result = await response.data.data;
+            const result = response.data;
             
             if (result.success) {
                 CustomToast.show('success', 'Transaction started successfully');
                 this.loadTransactions();
             } else {
-                CustomToast.show('error', result.message);
+                CustomToast.show('error', result.message || 'Failed to start transaction');
             }
         } catch (error) {
             console.error('Error starting transaction:', error);
@@ -298,17 +306,19 @@ class TransactionsManager {
         const data = Object.fromEntries(formData.entries());
 
         try {
-            const response = await axios.post(`${userTransactionsAPI}?action=completeTransaction&id=${data.transaction_id}`, {
+            const response = await axios.post(`${userTransactionsAPI}?action=completeTransaction`, formData, {
                 headers: formHeaderAPI
             });
 
-            const result = await response.data.data;
+            const result = response.data;
 
             if (result.success) {
                 CustomToast.show('success', 'Transaction completed successfully');
                 form.reset();
                 bootstrap.Modal.getInstance(document.getElementById('completeTransactionModal')).hide();
                 this.loadTransactions();
+            } else {
+                CustomToast.show('error', result.message || 'Failed to complete transaction');
             }
 
         } catch (error) {
@@ -321,11 +331,11 @@ class TransactionsManager {
         if (!confirm('Are you sure you want to cancel this transaction?')) return;
 
         try {
-            const response = await axios.delete(`${userTransactionsAPI}?action=cancelTransaction&id=${transactionId}`, {
+            const response = await axios.delete(`${userTransactionsAPI}?action=cancelTransaction&transaction_id=${transactionId}`, {
                 headers: formHeaderAPI
             });
 
-            const result = await response.data.data;
+            const result = response.data;
 
             if (result.success) {
                 CustomToast.show('success', 'Transaction cancelled successfully');
@@ -349,17 +359,19 @@ class TransactionsManager {
         const data = Object.fromEntries(formData.entries());
 
         try {
-            const response = await axios.post(`${userTransactionsAPI}?action=reportDispute&id=${data.transaction_id}`, {
+            const response = await axios.post(`${userTransactionsAPI}?action=reportDispute`, formData, {
                 headers: formHeaderAPI
             });
 
-            const result = await response.data.data;
+            const result = response.data;
 
             if (result.success) {
                 CustomToast.show('success', 'Dispute reported successfully');
                 form.reset();
                 bootstrap.Modal.getInstance(document.getElementById('disputeTransactionModal')).hide();
                 this.loadTransactions();
+            } else {
+                CustomToast.show('error', result.message || 'Failed to report dispute');
             }
         } catch (error) {
             console.error('Error reporting dispute:', error);

@@ -1,6 +1,7 @@
 <?php
 
 require_once('../connection/connection.php');
+require_once('NotificationService.php');
 
 class TransactionService extends config {
 
@@ -72,13 +73,36 @@ class TransactionService extends config {
             $this->pdo->prepare($updateRequestSql)->execute([$requestId]);
             $this->pdo->prepare($updateOfferSql)->execute([$offerId]);
 
-            $this->pdo->commit();
+			$this->pdo->commit();
 
-            return [
-                'success' => true,
-                'message' => 'Transaction created successfully',
-                'transaction_id' => $transactionId
-            ];
+			// Notify both participants
+			$notificationService = new NotificationService();
+			$notificationData = [
+				'transaction_id' => $transactionId,
+				'coin_type_id' => $request['coin_type_id'],
+				'quantity' => $quantity,
+				'meeting_location' => $request['preferred_meeting_location']
+			];
+			$notificationService->createNotification(
+				(int)$request['user_id'],
+				'transaction',
+				'Your Request Transaction Has Been Scheduled',
+				'Your transaction has been scheduled.',
+				$notificationData
+			);
+			$notificationService->createNotification(
+				(int)$offer['user_id'],
+				'transaction',
+				'Your Offer Transaction Has Been Scheduled',
+				'Your transaction has been scheduled.',
+				$notificationData
+			);
+
+			return [
+				'success' => true,
+				'message' => 'Transaction created successfully',
+				'transaction_id' => $transactionId
+			];
 
         } catch (Exception $e) {
             $this->pdo->rollback();
@@ -106,10 +130,10 @@ class TransactionService extends config {
 
             // Create transaction
             $transactionSql = "INSERT INTO tbl_transactions (
-                requestor_id, offeror_id, coin_type_id, quantity, status, 
+                isOffer, coin_offers_id, requestor_id, offeror_id, coin_type_id, quantity, status, 
                 qr_code, meeting_location, meeting_longitude, 
                 meeting_latitude, created_at
-            ) VALUES (?, ?, ?, ?, 'scheduled', ?, ?, ?, ?, NOW())";
+            ) VALUES (?, ?, ?, ?, ?, ?, 'scheduled', ?, ?, ?, ?, NOW())";
 
             // Generate QR code
             $qrCode = 'QR_' . time() . '_' . rand(1000, 9999);
@@ -117,6 +141,8 @@ class TransactionService extends config {
             
             $transactionStmt = $this->pdo->prepare($transactionSql);
             $result = $transactionStmt->execute([
+                1,
+                $offerId,
                 $request['offeror_id'],      // requestor_id: person who made the request
                 $offer['user_id'],           // offeror_id: person who made the offer
                 $offer['coin_type_id'],
@@ -127,10 +153,35 @@ class TransactionService extends config {
                 $offer['meeting_latitude']
             ]);
 
-            return [
-                'success' => true,
-                'message' => 'Transaction created successfully',
-            ];
+			$transactionId = $this->pdo->lastInsertId();
+
+			// Notify both participants
+			$notificationService = new NotificationService();
+			$notificationData = [
+				'transaction_id' => $transactionId,
+				'coin_type_id' => $offer['coin_type_id'],
+				'quantity' => $offer['quantity'],
+				'meeting_location' => $offer['preferred_meeting_location']
+			];
+			$notificationService->createNotification(
+				(int)$request['offeror_id'],
+				'transaction',
+				'Your Offer Transaction Has Been Scheduled',
+				'Your transaction has been scheduled at '.$offer['preferred_meeting_location'].'.',
+				$notificationData
+			);
+			$notificationService->createNotification(
+				(int)$offer['user_id'],
+				'transaction',
+				'Your Offer Transaction Has Been Scheduled',
+				'Your transaction has been scheduled at '.$offer['preferred_meeting_location'].'.',
+				$notificationData
+			);
+
+			return [
+				'success' => true,
+				'message' => 'Transaction created successfully',
+			];
 
         } catch (Exception $e) {
             return [
@@ -156,10 +207,10 @@ class TransactionService extends config {
 
             // Create transaction
             $transactionSql = "INSERT INTO tbl_transactions (
-                requestor_id, offeror_id, coin_type_id, quantity, status, 
+                isOffer, coin_requests_id, requestor_id, offeror_id, coin_type_id, quantity, status, 
                 qr_code, meeting_location, meeting_longitude, 
                 meeting_latitude, created_at
-            ) VALUES (?, ?, ?, ?, 'scheduled', ?, ?, ?, ?, NOW())";
+            ) VALUES (?, ?, ?, ?, ?, ?, 'scheduled', ?, ?, ?, ?, NOW())";
 
             // Generate QR code
             $qrCode = 'QR_' . time() . '_' . rand(1000, 9999);
@@ -167,6 +218,8 @@ class TransactionService extends config {
             
             $transactionStmt = $this->pdo->prepare($transactionSql);
             $result = $transactionStmt->execute([
+                0,
+                $offerId,
                 $request['requestor_id'],      // requestor_id: person who made the request
                 $offer['user_id'],           // offeror_id: person who made the offer
                 $offer['coin_type_id'],
@@ -176,11 +229,36 @@ class TransactionService extends config {
                 $offer['meeting_longitude'],
                 $offer['meeting_latitude']
             ]);
+            
+			$transactionId = $this->pdo->lastInsertId();
 
-            return [
-                'success' => true,
-                'message' => 'Transaction created successfully',
-            ];
+			// Notify both participants
+			$notificationService = new NotificationService();
+			$notificationData = [
+				'transaction_id' => $transactionId,
+				'coin_type_id' => $offer['coin_type_id'],
+				'quantity' => $offer['quantity'],
+				'meeting_location' => $offer['preferred_meeting_location']
+			];
+			$notificationService->createNotification(
+				(int)$request['requestor_id'],
+				'transaction',
+				'Your Request Transaction Has Been Scheduled',
+				'Your transaction has been scheduled at '.$offer['preferred_meeting_location'].'.',
+				$notificationData
+			);
+			$notificationService->createNotification(
+				(int)$offer['user_id'],
+				'transaction',
+				'Your Offer Transaction Has Been Scheduled',
+				'Your transaction has been scheduled at '.$offer['preferred_meeting_location'].'.',
+				$notificationData
+			);
+
+			return [
+				'success' => true,
+				'message' => 'Transaction created successfully',
+			];
 
         } catch (Exception $e) {
             return [

@@ -47,7 +47,7 @@ class OfferService extends config {
      */
     public function getUserOffers($userId, $filters = []) {
         try {
-            $sql = "SELECT co.*, ct.denomination, ct.description 
+            $sql = "SELECT co.*, ct.denomination, ct.description, ct.image_path as coin_image_path
                     FROM tbl_coin_offers co 
                     JOIN tbl_coin_types ct ON co.coin_type_id = ct.id 
                     WHERE co.user_id = ?";

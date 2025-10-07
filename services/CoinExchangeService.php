@@ -79,7 +79,7 @@ class CoinExchangeService extends config {
 
             $query = "SELECT cr.*, u.username, u.first_name, u.last_name, u.email,
                              ct.denomination, ct.description as coin_description,
-                             up.business_name, up.business_type
+                             up.business_name, up.business_type, ct.image_path as coin_image_path
                       FROM tbl_coin_requests cr
                       JOIN tbl_users u ON cr.user_id = u.id
                       JOIN tbl_coin_types ct ON cr.coin_type_id = ct.id
@@ -348,8 +348,8 @@ class CoinExchangeService extends config {
             $whereSql = count($whereClauses) ? ('WHERE ' . implode(' AND ', $whereClauses)) : '';
 
             $query = "SELECT co.*, u.username, u.first_name, u.last_name, u.email,
-                             ct.denomination, ct.description as coin_description,
-                             up.business_name, up.business_type
+                             ct.denomination, ct.description as coin_description, ct.image_path as coin_image_path,
+                             up.business_name, up.business_type, ct.description as coin_type_description
                       FROM tbl_coin_offers co
                       JOIN tbl_users u ON co.user_id = u.id
                       JOIN tbl_coin_types ct ON co.coin_type_id = ct.id
