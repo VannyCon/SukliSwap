@@ -301,14 +301,14 @@ class OfferService extends config {
     /**
      * Get all active offers (for browsing)
      */
-    public function getActiveOffers($filters = []) {
+    public function getActiveOffers($userid = null, $filters = []) {
         try {
             $sql = "SELECT co.*, ct.denomination, ct.description, 
                            up.business_name, up.business_type, up.address
                     FROM tbl_coin_offers co 
                     JOIN tbl_coin_types ct ON co.coin_type_id = ct.id 
                     LEFT JOIN tbl_user_profiles up ON co.user_id = up.user_id
-                    WHERE co.status = 'active'";
+                    WHERE co.status = 'active' ";
             
             $params = [];
             
@@ -316,6 +316,12 @@ class OfferService extends config {
             if (!empty($filters['coin_type_id'])) {
                 $sql .= " AND co.coin_type_id = ?";
                 $params[] = $filters['coin_type_id'];
+            }
+
+            // Add filters
+            if (!empty($userid)) {
+                $sql .= " AND co.user_id = ?";
+                $params[] = $userid;
             }
             
             if (!empty($filters['search'])) {

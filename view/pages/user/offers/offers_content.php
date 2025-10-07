@@ -247,3 +247,40 @@
         </div>
     </div>
 </div>
+
+<!-- Targeted Requests Modal -->
+<div class="modal fade" id="targetedRequestsModal" tabindex="-1" aria-labelledby="targetedRequestsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="targetedRequestsModalLabel">Requests for this Offer</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Quantity</th>
+                                <th>Message</th>
+                                <th>My Location</th>
+                                <th>Schedule</th>
+                                <th>Status</th>
+                                <th style="width: 120px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="targetedRequestsTbody">
+                            <tr><td colspan="7" class="text-center text-muted"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <span class="text-muted me-auto" id="targetedRequestsCount"></span>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+    
+</div>

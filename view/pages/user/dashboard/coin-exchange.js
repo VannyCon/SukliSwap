@@ -5,6 +5,8 @@
 let coinExchangeAPI = null;
 let userProfileAPI = null;
 let adminAPI = null;
+let trCoinOfferAPI = null;
+let trCoinRequestAPI = null;
 let headerAPI = null;
 let formHeaderAPI = null;
 let user_id = null;
@@ -17,6 +19,8 @@ class CoinExchangeManager {
         adminAPI = this.authManager.API_CONFIG.baseURL + 'admin.php';
         headerAPI = this.authManager.API_CONFIG.getHeaders();
         formHeaderAPI = this.authManager.API_CONFIG.getFormHeaders();
+        trCoinOfferAPI = this.authManager.API_CONFIG.baseURL + 'tr_coin_offer.php';
+        trCoinRequestAPI = this.authManager.API_CONFIG.baseURL + 'tr_coin_request.php';
         this.currentUser = null;
         this.coinTypes = [];
         this.activeRequests = [];
@@ -59,6 +63,10 @@ class CoinExchangeManager {
             offerForm.addEventListener('submit', (e) => this.handleCreateOffer(e));
         }
 
+        // Targeted modals submit
+        document.getElementById('sendTargetedOfferForm')?.addEventListener('submit', (e) => this.submitTargetedOffer(e));
+        document.getElementById('sendTargetedRequestForm')?.addEventListener('submit', (e) => this.submitTargetedRequest(e));
+
         // Match actions
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('accept-match-btn')) {
@@ -66,6 +74,30 @@ class CoinExchangeManager {
             }
             if (e.target.classList.contains('complete-transaction-btn')) {
                 this.handleCompleteTransaction(e.target.dataset.qrCode);
+            }
+            if (e.target.classList.contains('send-offer-btn')) {
+                e.preventDefault();
+                const currentModal = e.target.closest('.modal');
+                if (currentModal) {
+                    try { bootstrap.Modal.getInstance(currentModal)?.hide(); } catch (_) {}
+                }
+                // Wait a tick for backdrop removal then open target modal
+                setTimeout(() => {
+                    // Clean any stale backdrops
+                    document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+                    this.openSendOfferModal(e.target.dataset.postOfferId, e.target.dataset.coinTypeId);
+                }, 150);
+            }
+            if (e.target.classList.contains('send-request-btn')) {
+                e.preventDefault();
+                const currentModal = e.target.closest('.modal');
+                if (currentModal) {
+                    try { bootstrap.Modal.getInstance(currentModal)?.hide(); } catch (_) {}
+                }
+                setTimeout(() => {
+                    document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+                    this.openSendRequestModal(e.target.dataset.postRequestId, e.target.dataset.coinTypeId);
+                }, 150);
             }
         });
 
@@ -284,6 +316,85 @@ class CoinExchangeManager {
         } catch (error) {
             console.error('Failed to create coin offer:', error);
             CustomToast.show('error', 'Failed to create coin offer');
+        }
+    }
+
+    // ===== Targeted interactions (send offer/request) =====
+    openSendOfferModal(postOfferId, coinTypeId) {
+        const coinTypeEl = document.getElementById('tro_coin_type_id');
+        const latEl = document.getElementById('tro_my_latitude');
+        const lngEl = document.getElementById('tro_my_longitude');
+        const postOfferIdEl = document.getElementById('tro_post_request_id');
+        if (coinTypeEl) coinTypeEl.value = coinTypeId || '';
+        if (postOfferIdEl) postOfferIdEl.value = postOfferId;
+        if (navigator.geolocation && latEl && lngEl) {
+            navigator.geolocation.getCurrentPosition((pos) => {
+                latEl.value = pos.coords.latitude;
+                lngEl.value = pos.coords.longitude;
+            }, () => {
+                latEl.value = '';
+                lngEl.value = '';
+            }, { enableHighAccuracy: true, timeout: 8000 });
+        }
+        const modalEl = document.getElementById('sendTargetedOfferModal');
+        if (modalEl) new bootstrap.Modal(modalEl).show();
+    }
+
+    openSendRequestModal(postRequestId, coinTypeId) {
+        const coinTypeEl = document.getElementById('trr_coin_type_id');
+        const latEl = document.getElementById('trr_my_latitude');
+        const lngEl = document.getElementById('trr_my_longitude');
+        const postRequestIdEl = document.getElementById('trr_post_offer_id');
+        if (coinTypeEl) coinTypeEl.value = coinTypeId || '';
+        if (postRequestIdEl) postRequestIdEl.value = postRequestId;
+        if (navigator.geolocation && latEl && lngEl) {
+            navigator.geolocation.getCurrentPosition((pos) => {
+                latEl.value = pos.coords.latitude;
+                lngEl.value = pos.coords.longitude;
+            }, () => {
+                latEl.value = '';
+                lngEl.value = '';
+            }, { enableHighAccuracy: true, timeout: 8000 });
+        }
+        const modalEl = document.getElementById('sendTargetedRequestModal');
+        if (modalEl) new bootstrap.Modal(modalEl).show();
+    }
+
+    async submitTargetedOffer(e) {
+        e.preventDefault();
+        const form = document.getElementById('sendTargetedOfferForm');
+        const data = new URLSearchParams(new FormData(form)).toString();
+        try {
+            const resp = await axios.post(`${trCoinRequestAPI}?action=send`, data, { headers: formHeaderAPI });
+            if (resp.data?.success) {
+                CustomToast?.show?.('success', 'Offer sent');
+                bootstrap.Modal.getInstance(document.getElementById('sendTargetedOfferModal'))?.hide();
+                form.reset();
+            } else {
+                CustomToast?.show?.('error', resp.data?.message || 'Failed to send');
+            }
+        } catch (err) {
+            console.error('submitTargetedOffer failed', err);
+            CustomToast?.show?.('error', 'Failed to send');
+        }
+    }
+
+    async submitTargetedRequest(e) {
+        e.preventDefault();
+        const form = document.getElementById('sendTargetedRequestForm');
+        const data = new URLSearchParams(new FormData(form)).toString();
+        try {
+            const resp = await axios.post(`${trCoinOfferAPI}?action=send`, data, { headers: formHeaderAPI });
+            if (resp.data?.success) {
+                CustomToast?.show?.('success', 'Request sent');
+                bootstrap.Modal.getInstance(document.getElementById('sendTargetedRequestModal'))?.hide();
+                form.reset();
+            } else {
+                CustomToast?.show?.('error', resp.data?.message || 'Failed to send');
+            }
+        } catch (err) {
+            console.error('submitTargetedRequest failed', err);
+            CustomToast?.show?.('error', 'Failed to send');
         }
     }
 
@@ -906,7 +1017,7 @@ class CoinExchangeManager {
             `;
 
             const footerHtml = `
-                <button type="button" class="btn btn-success" onclick="sendRequest(${request.id})">Send Request</button>
+                <button type="button" class="btn btn-success send-offer-btn" data-post-offer-id="${request.id}" data-coin-type-id="${request.coin_type_id}">Send Offer</button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             `;
 
@@ -966,7 +1077,7 @@ class CoinExchangeManager {
             `;
 
             const footerHtml = `
-                <button type="button" class="btn btn-success" onclick="sendOffer(${offer.id})">Send Offer</button>
+                <button type="button" class="btn btn-success send-request-btn" data-post-request-id="${offer.id}" data-coin-type-id="${offer.coin_type_id}">Send Request</button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             `;
 
@@ -1021,7 +1132,9 @@ class CoinExchangeManager {
             </div>
         `;
         document.body.appendChild(modal);
-        const bsModal = new bootstrap.Modal(modal);
+        // Ensure no hidden backdrop keeps next modal behind
+        document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+        const bsModal = new bootstrap.Modal(modal, { backdrop: true, focus: true });
         modal.addEventListener('hidden.bs.modal', () => {
             modal.remove();
         });

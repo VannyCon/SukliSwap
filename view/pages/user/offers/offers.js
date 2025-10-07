@@ -3,6 +3,7 @@
  */
 let coinExchangeAPI = null;
 let coinOffersAPI = null;
+let trCoinOfferAPI = null;
 let headerAPI = null;
 let formHeaderAPI = null;
 class OffersManager {
@@ -12,6 +13,7 @@ class OffersManager {
         const authManager = new AuthManager();
         coinExchangeAPI = authManager.API_CONFIG.baseURL + 'coin_exchange.php';
         coinOffersAPI = authManager.API_CONFIG.baseURL + 'user_offers.php';
+        trCoinOfferAPI = authManager.API_CONFIG.baseURL + 'tr_coin_offer.php';
         headerAPI = authManager.API_CONFIG.getHeaders();
         formHeaderAPI = authManager.API_CONFIG.getFormHeaders();
         this.filters = {
@@ -103,7 +105,7 @@ class OffersManager {
                 }
             });
 
-            const response = await axios.get(`${coinOffersAPI}?action=getActiveOffers&${params}`, {
+            const response = await axios.get(`${coinOffersAPI}?action=getMyOffers&${params}`, {
                 headers: headerAPI
             });
 
@@ -167,8 +169,8 @@ class OffersManager {
                                         <i class="fas fa-times"></i>
                                     </button>
                                 ` : ''}
-                                <button class="btn btn-outline-secondary" onclick="offersManager.viewOffer(${offer.id})">
-                                    <i class="fas fa-eye"></i>
+                                <button class="btn btn-outline-info" title="View Requests" onclick="offersManager.showTargetedRequests(${offer.id})">
+                                    <i class="fas fa-users"></i>
                                 </button>
                             </div>
                         </div>
@@ -388,6 +390,87 @@ class OffersManager {
 
         // Show offer details in a modal or redirect to details page
         alert(`Offer Details:\n\nCoin: ${offer.coin_description}\nValue: ₱${offer.denomination}\nQuantity: ${offer.quantity}\nStatus: ${offer.status}\nLocation: ${offer.preferred_meeting_location || 'Not specified'}\nNotes: ${offer.notes || 'None'}`);
+    }
+
+    async showTargetedRequests(offerId) {
+        const tbody = document.getElementById('targetedRequestsTbody');
+        const countEl = document.getElementById('targetedRequestsCount');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
+        }
+        try {
+            const resp = await axios.get(`${trCoinOfferAPI}?action=listByPostOffer&post_offer_id=${offerId}`, { headers: headerAPI });
+            const items = resp.data?.data || [];
+            if (!tbody) return;
+            if (items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No requests found</td></tr>';
+            } else {
+                tbody.innerHTML = items.map(r => `
+                    <tr>
+                        <td>${r.username || (r.first_name ? r.first_name + ' ' + (r.last_name||'') : 'User '+r.requestor_id)}</td>
+                        <td>${r.offered_quantity}</td>
+                        <td>${r.message || ''}</td>
+                        <td>${r.my_latitude ? `${Number(r.my_latitude).toFixed(5)}, ${Number(r.my_longitude).toFixed(5)}` : ''}</td>
+                        <td>${r.scheduled_time ? new Date(r.scheduled_time).toLocaleString() : ''}</td>
+                        <td><span class="badge bg-${r.status == 'pending' ? 'warning' : r.status == 'accepted' ? 'success' : 'danger'}">${r.status}</span></td>
+                        <td>
+                            ${r.status === 'pending' ? `
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-success" onclick="offersManager.acceptTargetedRequest(${r.id})">Accept</button>
+                                <button class="btn btn-outline-danger" onclick="offersManager.rejectTargetedRequest(${r.id})">Reject</button>
+                            </div>` : ''}
+                        </td>
+                    </tr>
+                `).join('');
+            }
+            if (countEl) countEl.textContent = `${items.length} request(s)`;
+            const modalEl = document.getElementById('targetedRequestsModal');
+            if (modalEl) new bootstrap.Modal(modalEl).show();
+        } catch (e) {
+            console.error('Failed to load targeted requests', e);
+            if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="text-danger text-center">Failed to load</td></tr>';
+        }
+    }
+
+    async acceptTargetedRequest(id) {
+        try {
+            const form = new URLSearchParams({ id: String(id) }).toString();
+            const resp = await axios.post(`${trCoinOfferAPI}?action=accept`, form, { headers: formHeaderAPI });
+            if (resp.data?.success) {
+                CustomToast.show('success', 'Request accepted, transaction created');
+                // reload modal table by finding currently viewed offer from header text if needed
+                const modalTitle = document.getElementById('targetedRequestsModalLabel');
+                // best-effort refresh: simply close modal and refresh offers list
+                const modalEl = document.getElementById('targetedRequestsModal');
+                if (modalEl) bootstrap.Modal.getInstance(modalEl)?.hide();
+                this.loadOffers();
+            } else {
+                CustomToast.show('error', resp.data?.message || 'Failed to accept');
+            }
+        } catch (e) {
+            console.error('Accept failed', e);
+            CustomToast.show('error', 'Accept failed');
+        }
+    }
+
+    async rejectTargetedRequest(id) {
+        try {
+            const form = new URLSearchParams({ id: String(id) }).toString();
+            const resp = await axios.post(`${trCoinOfferAPI}?action=reject`, form, { headers: formHeaderAPI });
+            if (resp.data?.success) {
+                CustomToast.show('success', 'Request rejected');
+                // refresh modal content by triggering the last opened offer if tracked
+                // keep simple: close modal and reload offers
+                const modalEl = document.getElementById('targetedRequestsModal');
+                if (modalEl) bootstrap.Modal.getInstance(modalEl)?.hide();
+                this.loadOffers();
+            } else {
+                CustomToast.show('error', resp.data?.message || 'Failed to reject');
+            }
+        } catch (e) {
+            console.error('Reject failed', e);
+            CustomToast.show('error', 'Reject failed');
+        }
     }
 
     filterOffers() {

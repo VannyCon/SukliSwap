@@ -5,6 +5,7 @@ let coinExchangeAPI = null;
 let headerAPI = null;
 let formHeaderAPI = null;
 let userRequestsAPI = null;
+let trCoinRequestAPI = null;
 let coinTypes = [];
 let requests = [];
 class RequestsManager {
@@ -12,6 +13,7 @@ class RequestsManager {
         const authManager = new AuthManager();
         coinExchangeAPI = authManager.API_CONFIG.baseURL + 'coin_exchange.php';
         userRequestsAPI = authManager.API_CONFIG.baseURL + 'user_requests.php';
+        trCoinRequestAPI = authManager.API_CONFIG.baseURL + 'tr_coin_request.php';
         headerAPI = authManager.API_CONFIG.getHeaders();
         formHeaderAPI = authManager.API_CONFIG.getFormHeaders();
         this.authManager = authManager;
@@ -170,8 +172,8 @@ class RequestsManager {
                                         <i class="fas fa-times"></i>
                                     </button>
                                 ` : ''}
-                                <button class="btn btn-outline-secondary" onclick="requestsManager.viewRequest(${request.id})">
-                                    <i class="fas fa-eye"></i>
+                                <button class="btn btn-outline-info" title="View Offers" onclick="requestsManager.showTargetedOffers(${request.id})">
+                                    <i class="fas fa-users"></i>
                                 </button>
                             </div>
                         </div>
@@ -387,6 +389,82 @@ class RequestsManager {
 
         // Show request details in a modal or redirect to details page
         alert(`Request Details:\n\nCoin: ${request.coin_description}\nValue: ₱${request.denomination}\nQuantity: ${request.quantity}\nStatus: ${request.status}\nLocation: ${request.preferred_meeting_location || 'Not specified'}\nNotes: ${request.notes || 'None'}`);
+    }
+
+    async showTargetedOffers(requestId) {
+        const tbody = document.getElementById('targetedOffersTbody');
+        const countEl = document.getElementById('targetedOffersCount');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
+        }
+        try {
+            const resp = await axios.get(`${trCoinRequestAPI}?action=listByPostRequest&post_request_id=${requestId}`, { headers: headerAPI });
+            const items = resp.data?.data || [];
+            if (!tbody) return;
+            if (items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No offers found</td></tr>';
+            } else {
+                tbody.innerHTML = items.map(o => `
+                    <tr>
+                        <td>${o.username || (o.first_name ? o.first_name + ' ' + (o.last_name||'') : 'User '+o.offeror_id)}</td>
+                        <td>${o.requested_quantity}</td>
+                        <td>${o.message || ''}</td>
+                        <td>${o.my_latitude ? `${Number(o.my_latitude).toFixed(5)}, ${Number(o.my_longitude).toFixed(5)}` : ''}</td>
+                        <td>${o.scheduled_time ? new Date(o.scheduled_time).toLocaleString() : ''}</td>
+                        <td><span class="badge bg-${o.status == 'pending' ? 'warning' : o.status == 'accepted' ? 'success' : 'danger'}">${o.status}</span></td>
+                        <td>
+                            ${o.status === 'pending' ? `
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-success" onclick="requestsManager.acceptTargetedOffer(${o.id})">Accept</button>
+                                <button class="btn btn-outline-danger" onclick="requestsManager.rejectTargetedOffer(${o.id})">Reject</button>
+                            </div>` : ''}
+                        </td>
+                    </tr>
+                `).join('');
+            }
+            if (countEl) countEl.textContent = `${items.length} offer(s)`;
+            const modalEl = document.getElementById('targetedOffersModal');
+            if (modalEl) new bootstrap.Modal(modalEl).show();
+        } catch (e) {
+            console.error('Failed to load targeted offers', e);
+            if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="text-danger text-center">Failed to load</td></tr>';
+        }
+    }
+
+    async acceptTargetedOffer(id) {
+        try {
+            const form = new URLSearchParams({ id: String(id) }).toString();
+            const resp = await axios.post(`${trCoinRequestAPI}?action=accept`, form, { headers: formHeaderAPI });
+            if (resp.data?.success) {
+                CustomToast.show('success', 'Offer accepted, transaction created');
+                const modalEl = document.getElementById('targetedOffersModal');
+                if (modalEl) bootstrap.Modal.getInstance(modalEl)?.hide();
+                this.loadRequests();
+            } else {
+                CustomToast.show('error', resp.data?.message || 'Failed to accept');
+            }
+        } catch (e) {
+            console.error('Accept failed', e);
+            CustomToast.show('error', 'Accept failed');
+        }
+    }
+
+    async rejectTargetedOffer(id) {
+        try {
+            const form = new URLSearchParams({ id: String(id) }).toString();
+            const resp = await axios.post(`${trCoinRequestAPI}?action=reject`, form, { headers: formHeaderAPI });
+            if (resp.data?.success) {
+                CustomToast.show('success', 'Offer rejected');
+                const modalEl = document.getElementById('targetedOffersModal');
+                if (modalEl) bootstrap.Modal.getInstance(modalEl)?.hide();
+                this.loadRequests();
+            } else {
+                CustomToast.show('error', resp.data?.message || 'Failed to reject');
+            }
+        } catch (e) {
+            console.error('Reject failed', e);
+            CustomToast.show('error', 'Reject failed');
+        }
     }
 
     filterRequests() {

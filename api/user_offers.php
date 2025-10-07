@@ -74,31 +74,6 @@ $middleware->requireAuth(function() {
                 $result = $offerService->createOffer($data, $GLOBALS['current_user']['id']);
                 echo json_encode($result);
                 break;
-                
-            case 'getMyOffers':
-                $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
-                $size = isset($_GET['size']) ? intval($_GET['size']) : 12;
-                $search = isset($_GET['search']) ? trim($_GET['search']) : '';
-                $status = isset($_GET['status']) ? trim($_GET['status']) : '';
-                $coinTypeId = isset($_GET['coin_type_id']) ? trim($_GET['coin_type_id']) : '';
-                
-                $filters = [
-                    'status' => $status,
-                    'coin_type_id' => $coinTypeId,
-                    'search' => $search
-                ];
-                
-                $result = $offerService->getUserOffers($GLOBALS['current_user']['id'], $filters);
-                echo json_encode([
-                    'success' => true,
-                    'data' => $result['data'] ?? $result,
-                    'meta' => [
-                        'page' => $page,
-                        'size' => $size,
-                        'search' => $search
-                    ]
-                ]);
-                break;
 
             case 'getOfferById':
                 $offerId = $_GET['offer_id'] ?? '';
@@ -170,6 +145,34 @@ $middleware->requireAuth(function() {
                     'available_actions' => [
                         'createOffer', 'getMyOffers', 'getOfferById', 'getOfferStats', 
                         'updateOffer', 'deleteOffer', 'cancelOffer'
+                    ]
+                ]);
+                break;
+        }
+    } else if ($_SERVER["REQUEST_METHOD"] == "GET") {
+        $action = $_GET['action'] ?? '';
+        switch ($action) {
+            case 'getMyOffers':
+                $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
+                $size = isset($_GET['size']) ? intval($_GET['size']) : 12;
+                $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+                $status = isset($_GET['status']) ? trim($_GET['status']) : '';
+                $coinTypeId = isset($_GET['coin_type_id']) ? trim($_GET['coin_type_id']) : '';
+                
+                $filters = [
+                    'status' => $status,
+                    'coin_type_id' => $coinTypeId,
+                    'search' => $search
+                ];
+                
+                $result = $offerService->getUserOffers($GLOBALS['current_user']['id'], $filters);
+                echo json_encode([
+                    'success' => true,
+                    'data' => $result['data'] ?? $result,
+                    'meta' => [
+                        'page' => $page,
+                        'size' => $size,
+                        'search' => $search
                     ]
                 ]);
                 break;

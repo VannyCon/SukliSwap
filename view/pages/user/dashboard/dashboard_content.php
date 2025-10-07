@@ -11,6 +11,78 @@
         </div>
     </div>
 
+<!-- Send Targeted Offer Modal (from Active Request view) -->
+<div class="modal fade" id="sendTargetedOfferModal" tabindex="-1" aria-labelledby="sendTargetedOfferModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="sendTargetedOfferModalLabel">Send Offer</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="sendTargetedOfferForm">
+                <div class="modal-body">
+                    <input type="hidden" id="tro_coin_type_id" name="coin_type_id">
+                    <input type="hidden" id="tro_my_latitude" name="my_latitude">
+                    <input type="hidden" id="tro_my_longitude" name="my_longitude">
+                    <input type="hidden" id="tro_post_request_id" name="post_request_id">
+                    <div class="mb-3">
+                        <label for="tro_requested_quantity" class="form-label">Quantity</label>
+                        <input type="number" class="form-control" id="tro_requested_quantity" name="requested_quantity" min="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="tro_message" class="form-label">Message (optional)</label>
+                        <textarea class="form-control" id="tro_message" name="message" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="tro_schedule" class="form-label">Schedule (optional)</label>
+                        <input type="datetime-local" class="form-control" id="tro_schedule" name="scheduled_time">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Send Offer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+</div>
+
+<!-- Send Targeted Request Modal (from Active Offer view) -->
+<div class="modal fade" id="sendTargetedRequestModal" tabindex="-1" aria-labelledby="sendTargetedRequestModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="sendTargetedRequestModalLabel">Send Request</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="sendTargetedRequestForm">
+                <div class="modal-body">
+                    <input type="hidden" id="trr_coin_type_id" name="coin_type_id">
+                    <input type="hidden" id="trr_my_latitude" name="my_latitude">
+                    <input type="hidden" id="trr_my_longitude" name="my_longitude">
+                    <input type="hidden" id="trr_post_offer_id" name="post_offer_id">
+                    <div class="mb-3">
+                        <label for="trr_offered_quantity" class="form-label">Quantity</label>
+                        <input type="number" class="form-control" id="trr_offered_quantity" name="offered_quantity" min="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="trr_message" class="form-label">Message (optional)</label>
+                        <textarea class="form-control" id="trr_message" name="message" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="trr_schedule" class="form-label">Schedule (optional)</label>
+                        <input type="datetime-local" class="form-control" id="trr_schedule" name="scheduled_time">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Send Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
     <!-- Tab content -->
     <div class="tab-content" id="dashboardTabs">
         <!-- Dashboard Tab -->
