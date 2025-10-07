@@ -276,6 +276,66 @@
     </div>
 </div>
 
+<!-- Start/Verify Transaction Modal (QR) -->
+<div class="modal fade" id="startTransactionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Verify Meeting via QR</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="qrRoleNotice" class="alert alert-info mb-3">
+                    <i class="fas fa-info-circle"></i>
+                    Please follow the instructions below to verify the meeting.
+                </div>
+
+                <div id="qrScannerSection" class="d-none">
+                    <div class="mb-2"><strong>Scan the presenter's QR code</strong></div>
+                    <div id="qrReader" style="width: 100%; max-width: 480px"></div>
+                    <div id="qrScanStatus" class="small text-muted mt-2"></div>
+                </div>
+
+                <div id="qrPresentSection" class="d-none">
+                    <div class="mb-2"><strong>Show this QR code to the scanner</strong></div>
+                    <div id="qrCodeCanvas" class="d-flex justify-content-center mb-2"></div>
+                    <div class="text-center">
+                        <code id="qrCodeText" class="small"></code>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="qrSuccessModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Verification Successful</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    Meeting verified. Transaction marked completed.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- External libs for QR (loaded only on this page) -->
+<script src="https://unpkg.com/html5-qrcode" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+
 <style>
 .rating {
     display: flex;

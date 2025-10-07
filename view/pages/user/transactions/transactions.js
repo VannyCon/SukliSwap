@@ -292,28 +292,97 @@ class TransactionsManager {
     }
 
     async startTransaction(transactionId) {
-        if (!confirm('Are you sure you want to start this transaction?')) return;
-
         try {
-            const formData = new FormData();
-            formData.append('transaction_id', transactionId);
-            formData.append('status', 'in_progress');
-
-            const response = await axios.put(`${userTransactionsAPI}?action=updateTransactionStatus`, formData, {
-                headers: formHeaderAPI
-            });
-
-            const result = response.data;
-            
-            if (result.success) {
-                CustomToast.show('success', 'Transaction started successfully');
-                this.loadTransactions();
-            } else {
-                CustomToast.show('error', result.message || 'Failed to start transaction');
+            // Fetch transaction to know roles and qr_code
+            const resp = await axios.get(`${userTransactionsAPI}?action=getTransactionById&transaction_id=${transactionId}`, { headers: headerAPI });
+            if (!resp.data.success) {
+                CustomToast?.show?.('error', resp.data.message || 'Unable to start');
+                return;
             }
-        } catch (error) {
-            console.error('Error starting transaction:', error);
-            CustomToast.show('error', 'Failed to start transaction');
+            const t = resp.data.data;
+
+            // Determine if current user is poser (scanner) or presenter
+            const isPoser = String(t.poser_id) === String(this.currentUserId);
+
+            // Prepare modal sections
+            const modalEl = document.getElementById('startTransactionModal');
+            const scannerSec = document.getElementById('qrScannerSection');
+            const presentSec = document.getElementById('qrPresentSection');
+            const roleNotice = document.getElementById('qrRoleNotice');
+            const qrText = document.getElementById('qrCodeText');
+            const qrCanvas = document.getElementById('qrCodeCanvas');
+            const scanStatus = document.getElementById('qrScanStatus');
+
+            // Reset UI
+            scannerSec.classList.add('d-none');
+            presentSec.classList.add('d-none');
+            qrCanvas.innerHTML = '';
+            qrText.textContent = '';
+            scanStatus.textContent = '';
+
+            if (isPoser) {
+                roleNotice.innerHTML = '<i class="fas fa-camera"></i> You are the scanner. Please scan the other party\'s QR.';
+                scannerSec.classList.remove('d-none');
+                // Start scanner after modal shows
+                setTimeout(() => this._initiateQrScanner(transactionId), 300);
+            } else {
+                roleNotice.innerHTML = '<i class="fas fa-qrcode"></i> Present this QR to the scanner.';
+                presentSec.classList.remove('d-none');
+                // Render QR code (t.qr_code)
+                const qr = new QRCode(qrCanvas, {
+                    text: t.qr_code,
+                    width: 256,
+                    height: 256,
+                });
+                qrText.textContent = t.qr_code;
+            }
+
+            new bootstrap.Modal(modalEl).show();
+        } catch (e) {
+            console.error('startTransaction error', e);
+            CustomToast?.show?.('error', 'Failed to start transaction');
+        }
+    }
+
+    async _initiateQrScanner(transactionId) {
+        const scanStatus = document.getElementById('qrScanStatus');
+        const readerEl = document.getElementById('qrReader');
+        if (!window.Html5Qrcode || !readerEl) {
+            scanStatus.textContent = 'Scanner not available on this device.';
+            return;
+        }
+        try {
+            const html5QrCode = new Html5Qrcode('qrReader');
+            const config = { fps: 10, qrbox: 250 };
+            const onScanSuccess = async (decodedText) => {
+                scanStatus.textContent = 'QR scanned. Verifying...';
+                try {
+                    const formData = new FormData();
+                    formData.append('transaction_id', transactionId);
+                    formData.append('qr_code', decodedText);
+
+                    const resp = await axios.post(`${userTransactionsAPI}?action=verifyAndComplete`, formData, { headers: formHeaderAPI });
+                    const result = resp.data;
+                    await html5QrCode.stop();
+                    if (result.success) {
+                        bootstrap.Modal.getInstance(document.getElementById('startTransactionModal'))?.hide();
+                        new bootstrap.Modal(document.getElementById('qrSuccessModal')).show();
+                        this.loadTransactions();
+                    } else {
+                        scanStatus.textContent = result.message || 'Verification failed. Try again.';
+                    }
+                } catch (err) {
+                    console.error(err);
+                    scanStatus.textContent = 'Network error. Try again.';
+                }
+            };
+            const onScanFailure = (error) => {
+                // No-op; keep scanning
+            };
+            await html5QrCode.start({ facingMode: 'environment' }, config, onScanSuccess, onScanFailure);
+        } catch (err) {
+            console.error('init scanner error', err);
+            scanStatus.textContent = 'Unable to start camera.';
         }
     }
 

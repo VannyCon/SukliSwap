@@ -70,6 +70,22 @@ $middleware->requireAuth(function() {
                 echo json_encode($result);
                 break;
 
+            case 'verifyAndComplete':
+                $transactionId = $_POST['transaction_id'] ?? '';
+                $qrCode = $_POST['qr_code'] ?? '';
+                if (!$transactionId || !$qrCode) {
+                    http_response_code(400);
+                    echo json_encode(['success' => false, 'message' => 'Transaction ID and QR code are required']);
+                    break;
+                }
+                $result = $transactionService->verifyAndComplete(
+                    $transactionId,
+                    $qrCode,
+                    $GLOBALS['current_user']['id']
+                );
+                echo json_encode($result);
+                break;
+
             case 'reportDispute':
                 $transactionId = $_POST['transaction_id'] ?? '';
                 $disputeReason = $_POST['dispute_reason'] ?? '';
@@ -187,6 +203,23 @@ $middleware->requireAuth(function() {
                         'search' => $search
                     ]
                 ]);
+                break;
+            case 'getTransactionById':
+                $transactionId = $_GET['transaction_id'] ?? $_GET['id'] ?? '';
+                if ($transactionId) {
+                    $result = $transactionService->getTransactionById($transactionId, $GLOBALS['current_user']['id']);
+                    echo json_encode($result);
+                } else {
+                    http_response_code(400);
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'Transaction ID is required'
+                    ]);
+                }
+                break;
+            default:
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Invalid action']);
                 break;
         }
     } else {

@@ -443,6 +443,10 @@ class TransactionService extends config {
             
             $sql = "UPDATE tbl_transactions SET status = ?, updated_at = NOW()";
             $params = [$status];
+
+            if ($status === 'in_progress') {
+                $sql .= ", actual_meeting_time = NOW()";
+            }
             
             if ($notes) {
                 $sql .= ", notes = ?";
@@ -517,6 +521,51 @@ class TransactionService extends config {
             return [
                 'success' => false,
                 'message' => 'Error completing transaction: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Verify QR and complete transaction (sets actual_meeting_time if empty, then completion_time)
+     */
+    public function verifyAndComplete($transactionId, $qrCode, $userId) {
+        try {
+            $this->pdo->beginTransaction();
+
+            // Fetch transaction and verify membership and status
+            $sql = "SELECT * FROM tbl_transactions WHERE id = ? AND qr_code = ? AND (requestor_id = ? OR offeror_id = ?) AND status IN ('scheduled','in_progress')";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([$transactionId, $qrCode, $userId, $userId]);
+            $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$transaction) {
+                $this->pdo->rollback();
+                return [
+                    'success' => false,
+                    'message' => 'Invalid QR or access denied'
+                ];
+            }
+
+            // If scheduled, mark in_progress and set actual_meeting_time
+            if ($transaction['status'] === 'scheduled') {
+                $update = $this->pdo->prepare("UPDATE tbl_transactions SET status = 'in_progress', actual_meeting_time = NOW(), updated_at = NOW() WHERE id = ?");
+                $update->execute([$transactionId]);
+            }
+
+            // Then complete
+            $complete = $this->pdo->prepare("UPDATE tbl_transactions SET status = 'completed', completion_time = NOW(), updated_at = NOW() WHERE id = ?");
+            $complete->execute([$transactionId]);
+
+            $this->pdo->commit();
+            return [
+                'success' => true,
+                'message' => 'Transaction verified and completed'
+            ];
+        } catch (Exception $e) {
+            $this->pdo->rollback();
+            return [
+                'success' => false,
+                'message' => 'Error verifying transaction: ' . $e->getMessage()
             ];
         }
     }
