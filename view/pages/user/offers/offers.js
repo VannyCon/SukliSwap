@@ -51,6 +51,18 @@ class OffersManager {
         document.getElementById('getEditLocationBtn')?.addEventListener('click', () => {
             this.openLocationPicker('edit_offer');
         });
+
+        // Meeting schedule form
+        document.getElementById('meetingScheduleForm')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleMeetingSchedule();
+        });
+
+        // Set minimum date to today when modal opens
+        document.getElementById('meetingScheduleModal')?.addEventListener('show.bs.modal', () => {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('meeting_date').min = today;
+        });
     }
 
     async loadCoinTypes() {
@@ -430,15 +442,40 @@ class OffersManager {
         }
     }
 
-    async acceptTargetedRequest(id) {
+    acceptTargetedRequest(id) {
+        // Set the request ID and show the meeting schedule modal
+        document.getElementById('schedule_request_id').value = id;
+        new bootstrap.Modal(document.getElementById('meetingScheduleModal')).show();
+    }
+
+    async handleMeetingSchedule() {
+        const form = document.getElementById('meetingScheduleForm');
+        const formData = new FormData(form);
+        
+        // Combine date and time into a single datetime string
+        const date = formData.get('meeting_date');
+        const time = formData.get('meeting_time');
+        const datetime = `${date} ${time}:00`;
+        
+        // Add the combined datetime to formData
+        formData.set('scheduled_meeting_time', datetime);
+        
+        // Debug logging
+        console.log('Form data being sent:');
+        for (let [key, value] of formData.entries()) {
+            console.log(`${key}: ${value}`);
+        }
+        
+        await this.acceptTargetedRequestWithSchedule(formData);
+    }
+
+    async acceptTargetedRequestWithSchedule(formData) {
         try {
-            const form = new URLSearchParams({ id: String(id) }).toString();
-            const resp = await axios.post(`${trCoinOfferAPI}?action=accept`, form, { headers: formHeaderAPI });
+            const resp = await axios.post(`${trCoinOfferAPI}?action=accept`, formData, { headers: formHeaderAPI });
             if (resp.data?.success) {
-                CustomToast.show('success', 'Request accepted, transaction created');
-                // reload modal table by finding currently viewed offer from header text if needed
-                const modalTitle = document.getElementById('targetedRequestsModalLabel');
-                // best-effort refresh: simply close modal and refresh offers list
+                CustomToast.show('success', 'Request accepted, transaction created and meeting scheduled');
+                // Close both modals
+                bootstrap.Modal.getInstance(document.getElementById('meetingScheduleModal'))?.hide();
                 const modalEl = document.getElementById('targetedRequestsModal');
                 if (modalEl) bootstrap.Modal.getInstance(modalEl)?.hide();
                 this.loadOffers();

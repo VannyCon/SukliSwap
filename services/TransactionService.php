@@ -114,7 +114,7 @@ class TransactionService extends config {
     }
 
 
-    public function createTROfferTransaction($requestId, $offerId, $userId) {
+    public function createTROfferTransaction($requestId, $offerId, $userId, $scheduledMeetingTime = null) {
         try {
 
             // Get the transaction request
@@ -122,18 +122,33 @@ class TransactionService extends config {
             $requestStmt = $this->pdo->prepare($requestSql);
             $requestStmt->execute([$requestId]);
             $request = $requestStmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$request) {
+                return [
+                    'success' => false,
+                    'message' => 'Transaction request not found'
+                ];
+            }
+            
             // Get the offer that the request is referencing
             $offerSql = "SELECT * FROM tbl_coin_offers WHERE id = ? AND status = 'active'";
             $offerStmt = $this->pdo->prepare($offerSql);
             $offerStmt->execute([$offerId]);
             $offer = $offerStmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$offer) {
+                return [
+                    'success' => false,
+                    'message' => 'Referenced offer not found or not active'
+                ];
+            }
 
             // Create transaction
             $transactionSql = "INSERT INTO tbl_transactions (
                 isOffer, coin_offers_id, requestor_id, offeror_id, coin_type_id, quantity, status, 
                 qr_code, meeting_location, meeting_longitude, 
-                meeting_latitude, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, 'scheduled', ?, ?, ?, ?, NOW())";
+                meeting_latitude, scheduled_meeting_time, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, 'scheduled', ?, ?, ?, ?, ?, NOW())";
 
             // Generate QR code
             $qrCode = 'QR_' . time() . '_' . rand(1000, 9999);
@@ -150,7 +165,8 @@ class TransactionService extends config {
                 $qrCode,
                 $offer['preferred_meeting_location'],
                 $offer['meeting_longitude'],
-                $offer['meeting_latitude']
+                $offer['meeting_latitude'],
+                $scheduledMeetingTime        // scheduled_meeting_time
             ]);
 
 			$transactionId = $this->pdo->lastInsertId();
@@ -191,7 +207,7 @@ class TransactionService extends config {
         }
     }
 
-    public function createTRRequestTransaction($requestId, $offerId, $userId) {
+    public function createTRRequestTransaction($requestId, $offerId, $userId, $scheduledMeetingTime = null) {
         try {
 
             // Get the transaction request
@@ -199,18 +215,33 @@ class TransactionService extends config {
             $requestStmt = $this->pdo->prepare($requestSql);
             $requestStmt->execute([$requestId]);
             $request = $requestStmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$request) {
+                return [
+                    'success' => false,
+                    'message' => 'Transaction request not found'
+                ];
+            }
+            
             // Get the offer that the request is referencing
             $offerSql = "SELECT * FROM tbl_coin_requests WHERE id = ? AND status = 'active'";
             $offerStmt = $this->pdo->prepare($offerSql);
             $offerStmt->execute([$offerId]);
             $offer = $offerStmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$offer) {
+                return [
+                    'success' => false,
+                    'message' => 'Referenced request not found or not active'
+                ];
+            }
 
             // Create transaction
             $transactionSql = "INSERT INTO tbl_transactions (
                 isOffer, coin_requests_id, requestor_id, offeror_id, coin_type_id, quantity, status, 
                 qr_code, meeting_location, meeting_longitude, 
-                meeting_latitude, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, 'scheduled', ?, ?, ?, ?, NOW())";
+                meeting_latitude, scheduled_meeting_time, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, 'scheduled', ?, ?, ?, ?, ?, NOW())";
 
             // Generate QR code
             $qrCode = 'QR_' . time() . '_' . rand(1000, 9999);
@@ -227,7 +258,8 @@ class TransactionService extends config {
                 $qrCode,
                 $offer['preferred_meeting_location'],
                 $offer['meeting_longitude'],
-                $offer['meeting_latitude']
+                $offer['meeting_latitude'],
+                $scheduledMeetingTime        // scheduled_meeting_time
             ]);
             
 			$transactionId = $this->pdo->lastInsertId();

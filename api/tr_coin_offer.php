@@ -56,7 +56,8 @@ $middleware->requireAuth(function() {
 			break;
 		case 'accept':
 			$id = intval($_POST['id'] ?? 0);
-			echo json_encode($svc->accept($id, $userId));
+			$scheduledMeetingTime = $_POST['scheduled_meeting_time'] ?? null;
+			echo json_encode($svc->accept($id, $userId, $scheduledMeetingTime));
 			break;
 		case 'reject':
 			$id = intval($_POST['id'] ?? 0);

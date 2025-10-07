@@ -61,9 +61,12 @@ class TrCoinRequestService extends config {
 		}
 	}
 
-	public function accept($id, $ownerUserId) {
+	public function accept($id, $ownerUserId, $scheduledMeetingTime = null) {
 		try {
 			$this->pdo->beginTransaction();
+
+			// Debug logging
+			error_log("TrCoinRequestService::accept - ID: $id, OwnerUserId: $ownerUserId, ScheduledTime: $scheduledMeetingTime");
 
 			// Load targeted request and validate post request ownership
 			$getSql = "SELECT trr.*, cr.user_id AS post_request_owner
@@ -74,9 +77,24 @@ class TrCoinRequestService extends config {
 			$stmt->execute([$id]);
 			$row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-			if (!$row || (int)$row['post_request_owner'] !== (int)$ownerUserId || $row['status'] !== 'pending') {
+			// Debug logging
+			error_log("Query result: " . print_r($row, true));
+
+			if (!$row) {
 				$this->pdo->rollback();
-				return [ 'success' => false, 'message' => 'Request not found or not authorized' ];
+				return [ 'success' => false, 'message' => 'Request not found' ];
+			}
+
+			if ((int)$row['post_request_owner'] !== (int)$ownerUserId) {
+				$this->pdo->rollback();
+				error_log("DEBUG: Authorization failed - Request owner: {$row['post_request_owner']}, Current user: $ownerUserId");
+				return [ 'success' => false, 'message' => 'Not authorized to accept this request' ];
+			}
+
+			if ($row['status'] !== 'pending') {
+				$this->pdo->rollback();
+				error_log("DEBUG: Request status is not pending - Status: {$row['status']}");
+				return [ 'success' => false, 'message' => 'Request is not in pending status' ];
 			}
 
 			// Mark accepted
@@ -84,9 +102,9 @@ class TrCoinRequestService extends config {
 			$upd->execute([$id]);
 			$newOfferId = $this->pdo->lastInsertId();
 
-			// Create transaction using existing method
+			// Create transaction using existing method with scheduled meeting time
 			$transactionService = new TransactionService();
-			$tx = $transactionService->createTRRequestTransaction($id, $row['post_request_id'], $ownerUserId);
+			$tx = $transactionService->createTRRequestTransaction($id, $row['post_request_id'], $ownerUserId, $scheduledMeetingTime);
 
 			$this->pdo->commit();
 			return $tx;

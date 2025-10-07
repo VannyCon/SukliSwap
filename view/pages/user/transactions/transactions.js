@@ -113,7 +113,7 @@ class TransactionsManager {
                         </div>
                         <div class="col-md-2">
                             <span class="badge bg-${this.getStatusColor(transaction.status)}">${transaction.status}</span><br>
-                            <small class="text-muted">${new Date(transaction.created_at).toLocaleDateString()}</small>
+                            <small class="text-muted">${transaction.scheduled_meeting_time ? this.formatMeetingTime(transaction.scheduled_meeting_time) : 'Not scheduled'}</small>
                         </div>
                         <div class="col-md-1">
                             <small class="text-muted">${transaction.meeting_location || 'TBD'}</small>
@@ -195,6 +195,27 @@ class TransactionsManager {
         return 'text-primary';
     }
 
+    formatMeetingTime(datetimeString) {
+        try {
+            const date = new Date(datetimeString);
+            
+            // Format options for readable date and time
+            const options = {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            };
+            
+            return date.toLocaleDateString('en-US', options);
+        } catch (error) {
+            console.error('Error formatting meeting time:', error);
+            return datetimeString; // Return original string if formatting fails
+        }
+    }
+
     updateStats() {
         const stats = {
             total_transactions: this.transactions.length,
@@ -253,6 +274,7 @@ class TransactionsManager {
                 <div class="col-md-6">
                     <h6>Meeting Information</h6>
                     <p><strong>Location:</strong> ${transaction.meeting_location || 'To be determined'}</p>
+                    <p><strong>Scheduled Time:</strong> ${transaction.scheduled_meeting_time ? this.formatMeetingTime(transaction.scheduled_meeting_time) : 'Not scheduled'}</p>
                     <p><strong>QR Code:</strong> ${transaction.qr_code}</p>
                     <p><strong>Status:</strong> <span class="badge bg-${this.getStatusColor(transaction.status)}">${transaction.status}</span></p>
                 </div>

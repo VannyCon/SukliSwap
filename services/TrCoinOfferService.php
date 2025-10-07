@@ -61,9 +61,12 @@ class TrCoinOfferService extends config {
 		}
 	}
 
-	public function accept($id, $ownerUserId) {
+	public function accept($id, $ownerUserId, $scheduledMeetingTime = null) {
 		try {
 			$this->pdo->beginTransaction();
+
+			// Debug logging
+			error_log("TrCoinOfferService::accept - ID: $id, OwnerUserId: $ownerUserId, ScheduledTime: $scheduledMeetingTime");
 
 			// Load offer and validate post offer ownership
 			$getSql = "SELECT tro.*, co.user_id AS post_offer_owner
@@ -85,9 +88,9 @@ class TrCoinOfferService extends config {
 
 			$newRequestId = $this->pdo->lastInsertId();
 
-			// Create transaction using existing method
+			// Create transaction using existing method with scheduled meeting time
 			$transactionService = new TransactionService();
-			$tx = $transactionService->createTROfferTransaction($id, $offer['post_offer_id'], $ownerUserId);
+			$tx = $transactionService->createTROfferTransaction($id, $offer['post_offer_id'], $ownerUserId, $scheduledMeetingTime);
 
 			$this->pdo->commit();
 			return $tx;

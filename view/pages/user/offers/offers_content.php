@@ -282,3 +282,36 @@
     </div>
     
 </div>
+
+<!-- Meeting Schedule Modal -->
+<div class="modal fade" id="meetingScheduleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Schedule Meeting</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="meetingScheduleForm">
+                <input type="hidden" id="schedule_request_id" name="id">
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        Please select a date and time for the coin exchange meeting.
+                    </div>
+                    <div class="mb-3">
+                        <label for="meeting_date" class="form-label">Meeting Date</label>
+                        <input type="date" class="form-control" id="meeting_date" name="meeting_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="meeting_time" class="form-label">Meeting Time</label>
+                        <input type="time" class="form-control" id="meeting_time" name="meeting_time" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Accept & Schedule</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
