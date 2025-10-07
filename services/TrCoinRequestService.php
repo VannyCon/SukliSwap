@@ -82,25 +82,11 @@ class TrCoinRequestService extends config {
 			// Mark accepted
 			$upd = $this->pdo->prepare("UPDATE tbl_tr_coin_request SET status='accepted', updated_at=NOW() WHERE id=?");
 			$upd->execute([$id]);
-
-			// Create a base offer row to pair using existing transaction flow
-			$createOffer = $this->pdo->prepare("INSERT INTO tbl_coin_offers (
-				user_id, coin_type_id, quantity,
-				meeting_longitude, meeting_latitude, notes, status, created_at
-			) VALUES (?, ?, ?, ?, ?, ?, 'active', NOW())");
-			$createOffer->execute([
-				$row['requestor_id'],
-				$row['coin_type_id'],
-				$row['requested_quantity'],
-				$row['my_longitude'],
-				$row['my_latitude'],
-				$row['message']
-			]);
 			$newOfferId = $this->pdo->lastInsertId();
 
 			// Create transaction using existing method
 			$transactionService = new TransactionService();
-			$tx = $transactionService->createTransaction($row['post_request_id'],null, $ownerUserId);
+			$tx = $transactionService->createTRRequestTransaction($id, $row['post_request_id'], $ownerUserId);
 
 			$this->pdo->commit();
 			return $tx;

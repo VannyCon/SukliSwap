@@ -92,78 +92,47 @@ class TransactionService extends config {
 
     public function createTROfferTransaction($requestId, $offerId, $userId) {
         try {
-            $this->pdo->beginTransaction();
 
-                $requestSql = "SELECT * FROM tbl_coin_requests WHERE id = ? AND status = 'active'";
-                $requestStmt = $this->pdo->prepare($requestSql);
-                $requestStmt->execute([$requestId]);
-                $request = $requestStmt->fetch(PDO::FETCH_ASSOC);
-                
-                $offerSql = "SELECT * FROM tbl_coin_offers WHERE id = ? AND status = 'active'";
-                $offerStmt = $this->pdo->prepare($offerSql);
-                $offerStmt->execute([$offerId]);
-                $offer = $offerStmt->fetch(PDO::FETCH_ASSOC);
-
-
-            if (!$request || !$offer) {
-                $this->pdo->rollback();
-                return [
-                    'success' => false,
-                    'message' => 'Request or offer not found or not active'
-                ];
-            }
+            // Get the transaction request
+            $requestSql = "SELECT * FROM tbl_tr_coin_offer WHERE id = ?";
+            $requestStmt = $this->pdo->prepare($requestSql);
+            $requestStmt->execute([$requestId]);
+            $request = $requestStmt->fetch(PDO::FETCH_ASSOC);
+            // Get the offer that the request is referencing
+            $offerSql = "SELECT * FROM tbl_coin_offers WHERE id = ? AND status = 'active'";
+            $offerStmt = $this->pdo->prepare($offerSql);
+            $offerStmt->execute([$offerId]);
+            $offer = $offerStmt->fetch(PDO::FETCH_ASSOC);
 
             // Create transaction
             $transactionSql = "INSERT INTO tbl_transactions (
-                match_id, requestor_id, offeror_id, coin_type_id, quantity, status, 
+                requestor_id, offeror_id, coin_type_id, quantity, status, 
                 qr_code, meeting_location, meeting_longitude, 
                 meeting_latitude, created_at
-            ) VALUES (?, ?, ?, ?, ?, 'scheduled', ?, ?, ?, ?, NOW())";
+            ) VALUES (?, ?, ?, ?, 'scheduled', ?, ?, ?, ?, NOW())";
 
             // Generate QR code
             $qrCode = 'QR_' . time() . '_' . rand(1000, 9999);
-            $quantity = min($request['quantity'], $offer['quantity']);
+            // $quantity = min($request['offered_quantity'],);
             
             $transactionStmt = $this->pdo->prepare($transactionSql);
             $result = $transactionStmt->execute([
-                null, // match_id - will be set when match is created
-                $request['user_id'],
-                $offer['user_id'],
-                $request['coin_type_id'],
-                $quantity,
+                $request['offeror_id'],      // requestor_id: person who made the request
+                $offer['user_id'],           // offeror_id: person who made the offer
+                $offer['coin_type_id'],
+                $offer['quantity'],
                 $qrCode,
-                $request['preferred_meeting_location'],
-                $request['meeting_longitude'],
-                $request['meeting_latitude']
+                $offer['preferred_meeting_location'],
+                $offer['meeting_longitude'],
+                $offer['meeting_latitude']
             ]);
-
-            if (!$result) {
-                $this->pdo->rollback();
-                return [
-                    'success' => false,
-                    'message' => 'Failed to create transaction'
-                ];
-            }
-
-            $transactionId = $this->pdo->lastInsertId();
-
-            // Update request and offer status
-            $updateRequestSql = "UPDATE tbl_coin_requests SET status = 'matched', updated_at = NOW() WHERE id = ?";
-            $updateOfferSql = "UPDATE tbl_coin_offers SET status = 'matched', updated_at = NOW() WHERE id = ?";
-
-            $this->pdo->prepare($updateRequestSql)->execute([$requestId]);
-            $this->pdo->prepare($updateOfferSql)->execute([$offerId]);
-
-            $this->pdo->commit();
 
             return [
                 'success' => true,
                 'message' => 'Transaction created successfully',
-                'transaction_id' => $transactionId
             ];
 
         } catch (Exception $e) {
-            $this->pdo->rollback();
             return [
                 'success' => false,
                 'message' => 'Error creating transaction: ' . $e->getMessage()
@@ -173,79 +142,47 @@ class TransactionService extends config {
 
     public function createTRRequestTransaction($requestId, $offerId, $userId) {
         try {
-            $this->pdo->beginTransaction();
 
-            if ($requestId != null) {
-                $requestSql = "SELECT * FROM tbl_coin_requests WHERE id = ? AND status = 'active'";
-                $requestStmt = $this->pdo->prepare($requestSql);
-                $requestStmt->execute([$requestId]);
-                $request = $requestStmt->fetch(PDO::FETCH_ASSOC);
-            }else if ($offerId != null) {
-                $offerSql = "SELECT * FROM tbl_coin_offers WHERE id = ? AND status = 'active'";
-                $offerStmt = $this->pdo->prepare($offerSql);
-                $offerStmt->execute([$offerId]);
-                $offer = $offerStmt->fetch(PDO::FETCH_ASSOC);
-            }
-
-            if (!$request || !$offer) {
-                $this->pdo->rollback();
-                return [
-                    'success' => false,
-                    'message' => 'Request or offer not found or not active'
-                ];
-            }
+            // Get the transaction request
+            $requestSql = "SELECT * FROM tbl_tr_coin_request WHERE id = ?";
+            $requestStmt = $this->pdo->prepare($requestSql);
+            $requestStmt->execute([$requestId]);
+            $request = $requestStmt->fetch(PDO::FETCH_ASSOC);
+            // Get the offer that the request is referencing
+            $offerSql = "SELECT * FROM tbl_coin_requests WHERE id = ? AND status = 'active'";
+            $offerStmt = $this->pdo->prepare($offerSql);
+            $offerStmt->execute([$offerId]);
+            $offer = $offerStmt->fetch(PDO::FETCH_ASSOC);
 
             // Create transaction
             $transactionSql = "INSERT INTO tbl_transactions (
-                match_id, requestor_id, offeror_id, coin_type_id, quantity, status, 
+                requestor_id, offeror_id, coin_type_id, quantity, status, 
                 qr_code, meeting_location, meeting_longitude, 
                 meeting_latitude, created_at
-            ) VALUES (?, ?, ?, ?, ?, 'scheduled', ?, ?, ?, ?, NOW())";
+            ) VALUES (?, ?, ?, ?, 'scheduled', ?, ?, ?, ?, NOW())";
 
             // Generate QR code
             $qrCode = 'QR_' . time() . '_' . rand(1000, 9999);
-            $quantity = min($request['quantity'], $offer['quantity']);
+            // $quantity = min($request['offered_quantity'],);
             
             $transactionStmt = $this->pdo->prepare($transactionSql);
             $result = $transactionStmt->execute([
-                null, // match_id - will be set when match is created
-                $request['user_id'],
-                $offer['user_id'],
-                $request['coin_type_id'],
-                $quantity,
+                $request['requestor_id'],      // requestor_id: person who made the request
+                $offer['user_id'],           // offeror_id: person who made the offer
+                $offer['coin_type_id'],
+                $offer['quantity'],
                 $qrCode,
-                $request['preferred_meeting_location'],
-                $request['meeting_longitude'],
-                $request['meeting_latitude']
+                $offer['preferred_meeting_location'],
+                $offer['meeting_longitude'],
+                $offer['meeting_latitude']
             ]);
-
-            if (!$result) {
-                $this->pdo->rollback();
-                return [
-                    'success' => false,
-                    'message' => 'Failed to create transaction'
-                ];
-            }
-
-            $transactionId = $this->pdo->lastInsertId();
-
-            // Update request and offer status
-            $updateRequestSql = "UPDATE tbl_coin_requests SET status = 'matched', updated_at = NOW() WHERE id = ?";
-            $updateOfferSql = "UPDATE tbl_coin_offers SET status = 'matched', updated_at = NOW() WHERE id = ?";
-
-            $this->pdo->prepare($updateRequestSql)->execute([$requestId]);
-            $this->pdo->prepare($updateOfferSql)->execute([$offerId]);
-
-            $this->pdo->commit();
 
             return [
                 'success' => true,
                 'message' => 'Transaction created successfully',
-                'transaction_id' => $transactionId
             ];
 
         } catch (Exception $e) {
-            $this->pdo->rollback();
             return [
                 'success' => false,
                 'message' => 'Error creating transaction: ' . $e->getMessage()
