@@ -145,10 +145,10 @@ class TransactionService extends config {
 
             // Create transaction
             $transactionSql = "INSERT INTO tbl_transactions (
-                isOffer, coin_offers_id, requestor_id, offeror_id, coin_type_id, quantity, status, 
+                isOffer, poser_id, coin_offers_id, requestor_id, offeror_id, coin_type_id, quantity, status, 
                 qr_code, meeting_location, meeting_longitude, 
                 meeting_latitude, scheduled_meeting_time, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, 'scheduled', ?, ?, ?, ?, ?, NOW())";
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'scheduled', ?, ?, ?, ?, ?, NOW())";
 
             // Generate QR code
             $qrCode = 'QR_' . time() . '_' . rand(1000, 9999);
@@ -157,6 +157,7 @@ class TransactionService extends config {
             $transactionStmt = $this->pdo->prepare($transactionSql);
             $result = $transactionStmt->execute([
                 1,
+                $userId,
                 $offerId,
                 $request['offeror_id'],      // requestor_id: person who made the request
                 $offer['user_id'],           // offeror_id: person who made the offer
@@ -238,10 +239,10 @@ class TransactionService extends config {
 
             // Create transaction
             $transactionSql = "INSERT INTO tbl_transactions (
-                isOffer, coin_requests_id, requestor_id, offeror_id, coin_type_id, quantity, status, 
+                isOffer, poser_id, coin_requests_id, requestor_id, offeror_id, coin_type_id, quantity, status, 
                 qr_code, meeting_location, meeting_longitude, 
                 meeting_latitude, scheduled_meeting_time, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, 'scheduled', ?, ?, ?, ?, ?, NOW())";
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'scheduled', ?, ?, ?, ?, ?, NOW())";
 
             // Generate QR code
             $qrCode = 'QR_' . time() . '_' . rand(1000, 9999);
@@ -250,6 +251,7 @@ class TransactionService extends config {
             $transactionStmt = $this->pdo->prepare($transactionSql);
             $result = $transactionStmt->execute([
                 0,
+                $userId,
                 $offerId,
                 $request['requestor_id'],      // requestor_id: person who made the request
                 $offer['user_id'],           // offeror_id: person who made the offer
