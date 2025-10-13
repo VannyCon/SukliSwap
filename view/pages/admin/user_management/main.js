@@ -537,12 +537,7 @@ class UserManagementManager {
 
     showToast(message, type = 'info') {
         console.log(`Toast [${type}]: ${message}`);
-        
-        if (typeof CustomToast !== 'undefined') {
-            CustomToast.show(message, type);
-        } else if (typeof showToast === 'function') {
-            showToast(message, type);
-        }
+        CustomToast.show(type, message);
     }
 }
 

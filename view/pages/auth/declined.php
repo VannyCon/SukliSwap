@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Account Pending Verification - SukliSwap</title>
+    <title>Account Declined - SukliSwap</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -14,7 +14,7 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
-        .pending-section {
+        .decline-section {
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -22,7 +22,7 @@
             padding: 2rem 0;
         }
         
-        .pending-container {
+        .decline-container {
             background: rgba(255, 255, 255, 0.95);
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
@@ -34,42 +34,39 @@
             margin: 0 auto;
         }
         
-        .pending-header {
-            background: linear-gradient(135deg,rgb(167, 112, 40) 0%,rgb(201, 162, 32) 100%);
+        .decline-header {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
             color: white;
             padding: 2.5rem 2rem;
             text-align: center;
         }
         
-        .pending-icon {
+        .decline-icon {
             font-size: 4rem;
             margin-bottom: 1rem;
-            animation: pulse 2s infinite;
+            animation: shake 2s infinite;
         }
         
-        @keyframes pulse {
-            0% {
-                transform: scale(1);
-                opacity: 1;
+        @keyframes shake {
+            0%, 100% {
+                transform: translateX(0);
             }
-            50% {
-                transform: scale(1.1);
-                opacity: 0.8;
+            25% {
+                transform: translateX(-5px);
             }
-            100% {
-                transform: scale(1);
-                opacity: 1;
+            75% {
+                transform: translateX(5px);
             }
         }
         
-        .pending-content {
+        .decline-content {
             padding: 2.5rem;
             text-align: center;
         }
         
         .status-badge {
             display: inline-block;
-            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
             color: white;
             padding: 0.5rem 1.5rem;
             border-radius: 50px;
@@ -169,15 +166,15 @@
         }
         
         .info-box {
-            background: rgba(23, 162, 184, 0.1);
-            border: 1px solid rgba(23, 162, 184, 0.2);
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid rgba(220, 53, 69, 0.2);
             border-radius: 15px;
             padding: 1.5rem;
             margin: 1.5rem 0;
         }
         
         .info-box h6 {
-            color: #17a2b8;
+            color: #dc3545;
             font-weight: 600;
             margin-bottom: 0.5rem;
         }
@@ -196,42 +193,43 @@
         <div class="shape"></div>
     </div>
     
-    <div class="pending-section">
+    <div class="decline-section">
         <div class="container">
             <div class="row justify-content-center">
                 <div class="col-12 col-md-8 col-lg-6 col-xl-5">
-                    <div class="pending-container">
-                        <div class="pending-header">
-                            <div class="pending-icon">
-                                <i class="fas fa-clock"></i>
+                    <div class="decline-container">
+                        <div class="decline-header">
+                            <div class="decline-icon">
+                                <i class="fas fa-times-circle"></i>
                             </div>
-                            <h2>Account Pending</h2>
-                            <p class="mb-0">Waiting for Admin Verification</p>
+                            <h2>Account Declined</h2>
+                            <p class="mb-0">Application Not Approved</p>
                         </div>
                     
-                        <div class="pending-content">
+                        <div class="decline-content">
                             <div class="status-badge">
-                                <i class="fas fa-hourglass-half me-2"></i>Under Review
+                                <i class="fas fa-exclamation-triangle me-2"></i>Declined
                             </div>
                             
-                            <h4 class="mb-3">Your account is being reviewed</h4>
+                            <h4 class="mb-3">Your account application has been declined</h4>
                             <p class="text-muted mb-4">
-                                Thank you for registering with SukliSwap! Your account has been submitted for review by our administrators. 
-                                You will be notified once your account is verified and activated.
+                                We're sorry, but your account application has not been approved at this time. 
+                                This decision was made after careful review by our administrators.
                             </p>
                             
                             <div class="info-box">
-                                <h6><i class="fas fa-info-circle me-2"></i>What happens next?</h6>
+                                <h6><i class="fas fa-info-circle me-2"></i>Why was my account declined?</h6>
                                 <p>
-                                    Our admin team will review your account details and verify your information. 
-                                    This process typically takes 24-48 hours during business days.
+                                    Account applications may be declined for various reasons including incomplete information, 
+                                    policy violations, or other administrative considerations.
                                 </p>
                             </div>
                             
                             <div class="info-box">
-                                <h6><i class="fas fa-envelope me-2"></i>Stay Updated</h6>
+                                <h6><i class="fas fa-phone me-2"></i>Need Help?</h6>
                                 <p>
-                                    You will receive an email notification once your account is verified and ready to use.
+                                    If you believe this is an error or need more information, please contact our support team 
+                                    for assistance with your application.
                                 </p>
                             </div>
                             
@@ -262,7 +260,7 @@
                 window.location.href = 'login.php';
             }, 1000);
         }
-        // Auto-refresh status every 30 seconds
+        // Auto-refresh status every 30 seconds to check if status changed
         setInterval(() => {
             const token = localStorage.getItem('auth_token');
             if (token) {
@@ -276,7 +274,7 @@
                     if (result.success && result.authenticated) {
                         const user = result.data.user;
                         
-                        // If user is now verified, redirect
+                        // If user status changed from declined, redirect appropriately
                         if (user.is_verified == 1) {
                             CustomToast.success('Account verified! Redirecting...');
                             setTimeout(() => {
@@ -285,6 +283,12 @@
                                 } else {
                                     window.location.href = '../user/dashboard/';
                                 }
+                            }, 1500);
+                        } else if (user.is_verified == 0 && user.is_active == 1) {
+                            // Account is now pending instead of declined
+                            CustomToast.info('Account status updated. Redirecting...');
+                            setTimeout(() => {
+                                window.location.href = 'pending.php';
                             }, 1500);
                         }
                     }

@@ -309,7 +309,7 @@
                 });
                 
                 const result = await response.json();
-                console.log("result sh=howsadf ", result);
+                console.log("result showdasf ", result);
                 if (result.success) {
                     // Store token in localStorage
                     localStorage.setItem('auth_token', result.data.token);
@@ -332,6 +332,14 @@
                     // Redirect to pending verification page
                     setTimeout(() => {
                         window.location.href = 'pending.php';
+                    }, 1500);
+                } else if (result.code === 'DECLINED') {
+                    localStorage.setItem('user_data', JSON.stringify(result.data.user));
+                    CustomToast.error('Account declined. Redirecting...');
+                    
+                    // Redirect to pending verification page
+                    setTimeout(() => {
+                        window.location.href = 'declined.php';
                     }, 1500);
                 } else {
                     CustomToast.error(result.message);

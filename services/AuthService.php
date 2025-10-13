@@ -144,7 +144,7 @@ class AuthService {
         }
 
         // Check if account is verified
-        if ($user['is_verified'] != 1) {
+        if ($user['is_verified'] == 0) {
             return [
                 'success' => false,
                 'message' => 'Account is pending verification',
@@ -156,6 +156,21 @@ class AuthService {
                         'email' => $user['email'],
                         'role' => $user['role'],
                         'is_verified' => $user['is_verified'],
+                        'created_at' => $user['created_at'],
+                        'full_name' => $user['first_name'] . ' ' . $user['last_name']
+                    ]
+                ]
+            ];
+        }if ($user['is_verified'] == 2) {
+            return [
+                'success' => false,
+                'message' => 'Account is declined',
+                'code' => 'DECLINED',
+                'data' => [
+                    'user' => [
+                        'id' => $user['id'],
+                        'username' => $user['username'],
+                        'email' => $user['email'],
                         'created_at' => $user['created_at'],
                         'full_name' => $user['first_name'] . ' ' . $user['last_name']
                     ]
