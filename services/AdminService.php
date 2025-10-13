@@ -406,7 +406,7 @@ class AdminService extends config {
             $this->beginTransaction();
 
             // Set user as declined (inactive and unverified)
-            $query = "UPDATE tbl_users SET is_verified = 0, is_active = 0, updated_at = NOW() WHERE id = ?";
+            $query = "UPDATE tbl_users SET is_verified = 2, is_active = 0, updated_at = NOW() WHERE id = ?";
             $stmt = $this->pdo->prepare($query);
             $stmt->execute([$userId]);
 
@@ -429,6 +429,63 @@ class AdminService extends config {
         }
     }
 
+    /**
+     * Activate user account
+     */
+    public function activateUser($userId, $adminId) {
+        try {
+            $this->beginTransaction();
+
+            $query = "UPDATE tbl_users SET is_active = 1 WHERE id = ?";
+            $stmt = $this->pdo->prepare($query);
+            $stmt->execute([$userId]);
+
+            $this->commit();
+            $this->logActivity($adminId, 'activate_user', 'user', $userId);
+
+            return [
+                'success' => true,
+                'message' => 'User activated successfully'
+            ];
+        } catch (PDOException $e) {
+            $this->rollback();
+            error_log("Activate user error: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Failed to activate user: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Deactivate user account
+     */
+    public function deactivateUser($userId, $adminId) {
+        try {
+            $this->beginTransaction();
+
+            $query = "UPDATE tbl_users SET is_active = 0 WHERE id = ?";
+            $stmt = $this->pdo->prepare($query);
+            $stmt->execute([$userId]);
+
+            $this->logActivity($adminId, 'deactivate_user', 'user', $userId);
+
+            $this->commit();
+        
+
+            return [
+                'success' => true,
+                'message' => 'User deactivated successfully'
+            ];
+        } catch (PDOException $e) {
+            $this->rollback();
+            error_log("Deactivate user error: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Failed to deactivate user: ' . $e->getMessage()
+            ];
+        }
+    }
     /**
      * Get user details by ID
      */

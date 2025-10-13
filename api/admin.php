@@ -168,6 +168,37 @@ $middleware->requireAdmin(function() {
                 $result = $adminService->declineUser($userId, $GLOBALS['current_user']['id']);
                 echo json_encode($result);
                 break;
+            case 'activateUser':
+                $userId = $_POST['user_id'] ?? '';
+                
+                if (!$userId) {
+                    http_response_code(400);
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'User ID is required'
+                    ]);
+                    break;
+                }
+                
+                $result = $adminService->activateUser($userId, $GLOBALS['current_user']['id']);
+                echo json_encode($result);
+                break;
+    
+            case 'deactivateUser':
+                $userId = $_POST['user_id'] ?? '';
+                
+                if (!$userId) {
+                    http_response_code(400);
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'User ID is required'
+                    ]);
+                    break;
+                }
+                
+                $result = $adminService->deactivateUser($userId, $GLOBALS['current_user']['id']);
+                echo json_encode($result);
+                break;
 
             case 'updateSystemSetting':
                 $key = $_POST['key'] ?? '';

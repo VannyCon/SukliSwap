@@ -158,13 +158,13 @@ class UserManagementManager {
                     <span class="badge bg-${this.getRoleBadgeClass(user.role)}">${user.role}</span>
                 </td>
                 <td>
-                    <span class="badge bg-${user.is_active ? 'success' : 'danger'} status-badge">
-                        ${user.is_active ? 'Active' : 'Inactive'}
+                    <span class="badge bg-${user.is_active == '1' ? 'success' : 'danger'} status-badge">
+                        ${user.is_active == '1' ? 'Active' : 'Inactive'}
                     </span>
                 </td>
                 <td>
-                    <span class="badge bg-${user.is_verified == '1' ? 'success' : user.is_verified == '0' && user.is_active == '0' ? 'danger' : 'warning'} status-badge">
-                        ${user.is_verified == '1' ? 'Verified' : user.is_verified == '0' && user.is_active == '0' ? 'Declined' : 'Pending'}
+                    <span class="badge bg-${user.is_verified == '1' ? 'success' : user.is_verified == '2' ? 'danger' : 'warning'} status-badge">
+                        ${user.is_verified == '1' ? 'Verified' : user.is_verified == '2' ? 'Declined' : 'Pending'}
                     </span>
                 </td>
                 <td>
@@ -175,7 +175,7 @@ class UserManagementManager {
                         <button class="btn btn-sm btn-outline-info" onclick="userManager.viewUserDetails(${user.id})" title="View Details">
                             <i class="fas fa-eye"></i>
                         </button>
-                        ${user.is_verified == '0' && user.is_active != '0' ? 
+                        ${user.is_verified == '0' ? 
                             `<button class="btn btn-sm btn-outline-success" onclick="userManager.verifyUser(${user.id})" title="Verify User">
                                 <i class="fas fa-check"></i>
                             </button>
@@ -183,7 +183,7 @@ class UserManagementManager {
                                 <i class="fas fa-times-circle"></i>
                             </button>` : ''
                         }
-                        ${user.is_active ? 
+                        ${user.is_active == '1' ? 
                             `<button class="btn btn-sm btn-outline-warning" onclick="userManager.updateUserStatus(${user.id}, 'deactivate')" title="Deactivate User">
                                 <i class="fas fa-user-slash"></i>
                             </button>` :
@@ -367,7 +367,14 @@ class UserManagementManager {
                 formData.append('action', 'verifyUser');
             } else if (action === 'decline') {
                 formData.append('action', 'declineUser');
+            } else if (action === 'delete') {
+                formData.append('action', 'deleteUser');
+            } else if (action === 'activate') {
+                formData.append('action', 'activateUser');
+            } else if (action === 'deactivate') {
+                formData.append('action', 'deactivateUser');
             }
+            
             const response = await axios.post(`${adminAPI}`, formData, {
                 headers: formHeaderAPI
             });
@@ -411,17 +418,23 @@ class UserManagementManager {
     }
 
     async updateUserStatus(userId, status) {
-        if (!confirm(`Are you sure you want to ${status} this user?`)) return;
-        await this.performUserAction(status, userId);
-        this.showToast(`User ${status}d successfully!`, 'success');
-        await this.loadUsers();
+        if (window.confirmActions && window.confirmActions.logout) {
+            window.confirmActions.success(`Are you sure you want to ${status} this user?`, async () => {
+                await this.performUserAction(status, userId);
+                CustomToast.show('success', `User ${status}d successfully!`);
+                await this.loadUsers();
+            });
+        }
     }
 
     async deleteUser(userId) {
-        if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
-        await this.performUserAction('delete', userId);
-        this.showToast('User deleted successfully!', 'success');
-        await this.loadUsers();
+        if (window.confirmActions && window.confirmActions.logout) {
+            window.confirmActions.success("Are you sure you want to delete this user?", async () => {
+                await this.performUserAction('delete', userId);
+                CustomToast.show('success', 'User deleted successfully!');
+                await this.loadUsers();
+            });
+        }
     }
 
     async viewUserDetails(userId) {
