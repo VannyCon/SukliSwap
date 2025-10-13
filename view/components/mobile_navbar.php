@@ -9,8 +9,8 @@
     <div class="container-fluid">
         <!-- Logo/Brand -->
         <a class="navbar-brand" href="../../index.php">
-            <i class="fas fa-map-marked-alt" style="font-size: 24px; color: #0d6efd;"></i>
-            <span class="ms-2">Cemetery System</span>
+            <i class="fas fa-hand-holding-usd" style="font-size: 24px; color: #0d6efd;"></i>
+            <span class="ms-2">Sukly Swap</span>
         </a>
 
         <!-- Mobile menu toggle -->
@@ -31,7 +31,7 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="../../admin/cemetery/">
-                            <i class="fas fa-map-marked-alt me-1"></i> Cemetery Map
+                            <i class="fas fa-hand-holding-usd me-1"></i> Cemetery Map
                         </a>
                     </li>
                     <li class="nav-item">
@@ -60,7 +60,7 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="../../staff/cemetery/">
-                            <i class="fas fa-map-marked-alt me-1"></i> Cemetery Map
+                            <i class="fas fa-coin me-1"></i> Cemetery Map
                         </a>
                     </li>
                     <li class="nav-item">

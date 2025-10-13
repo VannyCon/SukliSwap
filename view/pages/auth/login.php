@@ -252,6 +252,14 @@
             if (token && userData) {
                 try {
                     const user = JSON.parse(userData);
+                    
+                    // Check verification status
+                    if (user.is_verified != 1) {
+                        // User not verified, redirect to pending page
+                        window.location.href = 'pending.php';
+                        return;
+                    }
+                    
                     // Redirect based on user role
                     if (user.role === 'admin') {
                         window.location.href = '../admin/dashboard/';
@@ -301,6 +309,7 @@
                 });
                 
                 const result = await response.json();
+                console.log("result sh=howsadf ", result);
                 if (result.success) {
                     // Store token in localStorage
                     localStorage.setItem('auth_token', result.data.token);
@@ -314,6 +323,15 @@
                         } else {
                             window.location.href = '../user/dashboard/';
                         }
+                    }, 1500);
+                }else if (result.code === 'PENDING_VERIFICATION') {
+                    // Store user data for pending verification page
+                    localStorage.setItem('user_data', JSON.stringify(result.data.user));
+                    CustomToast.warning('Account pending verification. Redirecting...');
+                    
+                    // Redirect to pending verification page
+                    setTimeout(() => {
+                        window.location.href = 'pending.php';
                     }, 1500);
                 } else {
                     CustomToast.error(result.message);
@@ -338,7 +356,14 @@
                 .then(response => response.json())
                 .then(result => {
                     if (result.authenticated) {
-                        // User is already logged in, redirect
+                        // Check verification status
+                        if (result.data.user.is_verified != 1) {
+                            // User not verified, redirect to pending page
+                            window.location.href = 'pending.php';
+                            return;
+                        }
+                        
+                        // User is already logged in and verified, redirect
                         if (result.data.user.role === 'admin') {
                             window.location.href = '../admin/dashboard/';
                         } else {

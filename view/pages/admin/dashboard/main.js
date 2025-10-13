@@ -175,13 +175,13 @@ class AdminManager {
 
     // ============ USER MANAGEMENT ============
 
-    async loadUsers(status = '', search = '') {
+    async loadUsers(filter = '', search = '') {
         try {
             const params = new URLSearchParams({
                 action: 'getAllUsers',
                 page: 1,
                 size: 50,
-                status: status,
+                filter: filter,
                 search: search
             });
 
@@ -217,19 +217,37 @@ class AdminManager {
                                 <strong>Email:</strong> ${user.email}<br>
                                 <strong>Name:</strong> ${user.first_name || ''} ${user.last_name || ''}<br>
                                 <strong>Business:</strong> ${user.business_name || 'N/A'}<br>
-                                <strong>Role:</strong> <span class="badge badge-${this.getRoleBadgeClass(user.role)}">${user.role}</span><br>
-                                <strong>Status:</strong> <span class="badge badge-${user.is_active ? 'success' : 'danger'}">${user.is_active ? 'Active' : 'Inactive'}</span>
+                                <strong>Role:</strong> <span class="badge bg-${this.getRoleBadgeClass(user.role)}">${user.role}</span><br>
+                                <strong>Verification:</strong> <span class="badge bg-${user.is_verified ? 'success' : 'warning'}">${user.is_verified ? 'Verified' : 'Pending'}</span><br>
+                                <strong>Status:</strong> <span class="badge bg-${user.is_active ? 'success' : 'danger'}">${user.is_active ? 'Active' : 'Inactive'}</span>
                             </p>
                         </div>
                         <div class="col-md-4 text-right">
                             <small class="text-muted">${this.formatDate(user.created_at)}</small>
                             <div class="mt-2">
-                                <div class="btn-group" role="group">
-                                    ${user.is_active ? 
-                                        `<button class="btn btn-sm btn-outline-warning" onclick="adminManager.updateUserStatus(${user.id}, 'deactivate')">Deactivate</button>` :
-                                        `<button class="btn btn-sm btn-outline-success" onclick="adminManager.updateUserStatus(${user.id}, 'activate')">Activate</button>`
+                                <div class="btn-group-vertical btn-group-sm" role="group">
+                                    ${!user.is_verified ? 
+                                        `<button class="btn btn-sm btn-outline-success mb-1" onclick="adminManager.verifyUser(${user.id})">
+                                            <i class="fas fa-check me-1"></i>Verify
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger mb-1" onclick="adminManager.declineUser(${user.id})">
+                                            <i class="fas fa-times-circle me-1"></i>Decline
+                                        </button>` :
+                                        `<button class="btn btn-sm btn-outline-warning mb-1" onclick="adminManager.unverifyUser(${user.id})">
+                                            <i class="fas fa-times me-1"></i>Unverify
+                                        </button>`
                                     }
-                                    <button class="btn btn-sm btn-outline-danger" onclick="adminManager.deleteUser(${user.id})">Delete</button>
+                                    ${user.is_active ? 
+                                        `<button class="btn btn-sm btn-outline-warning mb-1" onclick="adminManager.updateUserStatus(${user.id}, 'deactivate')">
+                                            <i class="fas fa-user-slash me-1"></i>Deactivate
+                                        </button>` :
+                                        `<button class="btn btn-sm btn-outline-success mb-1" onclick="adminManager.updateUserStatus(${user.id}, 'activate')">
+                                            <i class="fas fa-user-check me-1"></i>Activate
+                                        </button>`
+                                    }
+                                    <button class="btn btn-sm btn-outline-danger" onclick="adminManager.deleteUser(${user.id})">
+                                        <i class="fas fa-trash me-1"></i>Delete
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -268,6 +286,84 @@ class AdminManager {
         }
     }
 
+    async verifyUser(userId) {
+        if (!confirm('Are you sure you want to verify this user? They will be able to access the system.')) {
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('action', 'verifyUser');
+            formData.append('user_id', userId);
+
+            const response = await axios.post(adminAPI, formData, {
+                headers: headerAPI
+            });
+
+            if (response.data.success) {
+                this.showToast('User verified successfully!', 'success');
+                await this.loadUsers();
+            } else {
+                this.showToast(response.data.message, 'error');
+            }
+        } catch (error) {
+            console.error('Failed to verify user:', error);
+            this.showToast('Failed to verify user', 'error');
+        }
+    }
+
+    async unverifyUser(userId) {
+        if (!confirm('Are you sure you want to unverify this user? They will lose access to the system.')) {
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('action', 'unverifyUser');
+            formData.append('user_id', userId);
+
+            const response = await axios.post(adminAPI, formData, {
+                headers: headerAPI
+            });
+
+            if (response.data.success) {
+                this.showToast('User unverified successfully!', 'success');
+                await this.loadUsers();
+            } else {
+                this.showToast(response.data.message, 'error');
+            }
+        } catch (error) {
+            console.error('Failed to unverify user:', error);
+            this.showToast('Failed to unverify user', 'error');
+        }
+    }
+
+    async declineUser(userId) {
+        if (!confirm('Are you sure you want to decline this user? This will permanently reject their registration and they will not be able to access the system.')) {
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('action', 'declineUser');
+            formData.append('user_id', userId);
+
+            const response = await axios.post(adminAPI, formData, {
+                headers: headerAPI
+            });
+
+            if (response.data.success) {
+                this.showToast('User declined successfully!', 'success');
+                await this.loadUsers();
+            } else {
+                this.showToast(response.data.message || 'Failed to decline user', 'error');
+            }
+        } catch (error) {
+            console.error('Error declining user:', error);
+            this.showToast('Error declining user', 'error');
+        }
+    }
+
     async deleteUser(userId) {
         if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
             return;
@@ -296,8 +392,8 @@ class AdminManager {
 
     searchUsers() {
         const search = document.getElementById('userSearchInput').value;
-        const status = document.querySelector('input[name="userFilter"]:checked').value;
-        this.loadUsers(status, search);
+        const filter = document.querySelector('input[name="userFilter"]:checked').value;
+        this.loadUsers(filter, search);
     }
 
     // ============ TRANSACTION MANAGEMENT ============

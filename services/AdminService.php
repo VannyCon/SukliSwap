@@ -94,7 +94,7 @@ class AdminService extends config {
     /**
      * Get all users with pagination
      */
-    public function getAllUsers($page = 1, $size = 20, $search = '', $status = '', $role = '') {
+    public function getAllUsers($page = 1, $size = 20, $search = '', $filter = '', $role = '') {
         try {
             $page = max(1, (int)$page);
             $size = max(1, min(100, (int)$size));
@@ -108,17 +108,21 @@ class AdminService extends config {
                 $params[':search'] = "%" . $search . "%";
             }
             
-            if ($status !== '') {
-                if ($status === 'active') {
+            if ($filter !== '') {
+                if ($filter === 'active') {
                     $whereClauses[] = "u.is_active = 1";
-                } elseif ($status === 'inactive') {
+                } elseif ($filter === 'inactive') {
                     $whereClauses[] = "u.is_active = 0";
-                } elseif ($status === 'verified') {
+                } elseif ($filter === 'verified') {
                     $whereClauses[] = "u.is_verified = 1";
-                } elseif ($status === 'unverified') {
-                    $whereClauses[] = "u.is_verified = 0";
+                } elseif ($filter === 'pending') {
+                    $whereClauses[] = "u.is_verified = 0 AND u.is_active = 1";
+                } elseif ($filter === 'declined') {
+                    $whereClauses[] = "u.is_verified = 0 AND u.is_active = 0";
                 }
             }
+
+            $whereClauses[] = "u.role != 'admin'";
             
             if ($role !== '') {
                 $whereClauses[] = "u.role = :role";
@@ -152,9 +156,52 @@ class AdminService extends config {
     }
 
     /**
+     * Get user statistics
+     */
+    public function getUserStatistics() {
+        try {
+            $stats = [];
+            
+            // Total users
+            $query = "SELECT COUNT(*) as total FROM tbl_users";
+            $stmt = $this->pdo->prepare($query);
+            $stmt->execute();
+            $stats['total'] = $stmt->fetchColumn();
+            
+            // Pending users
+            $query = "SELECT COUNT(*) as pending FROM tbl_users WHERE is_verified = 0 AND is_active = 1";
+            $stmt = $this->pdo->prepare($query);
+            $stmt->execute();
+            $stats['pending'] = $stmt->fetchColumn();
+            
+            // Verified users
+            $query = "SELECT COUNT(*) as verified FROM tbl_users WHERE is_verified = 1";
+            $stmt = $this->pdo->prepare($query);
+            $stmt->execute();
+            $stats['verified'] = $stmt->fetchColumn();
+            
+            // Declined users
+            $query = "SELECT COUNT(*) as declined FROM tbl_users WHERE is_verified = 0 AND is_active = 0";
+            $stmt = $this->pdo->prepare($query);
+            $stmt->execute();
+            $stats['declined'] = $stmt->fetchColumn();
+            
+            return $stats;
+        } catch (PDOException $e) {
+            error_log("Get user statistics error: " . $e->getMessage());
+            return [
+                'total' => 0,
+                'pending' => 0,
+                'verified' => 0,
+                'declined' => 0
+            ];
+        }
+    }
+
+    /**
      * Count users
      */
-    public function countUsers($search = '', $status = '', $role = '') {
+    public function countUsers($search = '', $filter = '', $role = '') {
         try {
             $whereClauses = [];
             $params = [];
@@ -164,17 +211,21 @@ class AdminService extends config {
                 $params[':search'] = "%" . $search . "%";
             }
             
-            if ($status !== '') {
-                if ($status === 'active') {
+            if ($filter !== '') {
+                if ($filter === 'active') {
                     $whereClauses[] = "u.is_active = 1";
-                } elseif ($status === 'inactive') {
+                } elseif ($filter === 'inactive') {
                     $whereClauses[] = "u.is_active = 0";
-                } elseif ($status === 'verified') {
+                } elseif ($filter === 'verified') {
                     $whereClauses[] = "u.is_verified = 1";
-                } elseif ($status === 'unverified') {
-                    $whereClauses[] = "u.is_verified = 0";
+                } elseif ($filter === 'pending') {
+                    $whereClauses[] = "u.is_verified = 0 AND u.is_active = 1";
+                } elseif ($filter === 'declined') {
+                    $whereClauses[] = "u.is_verified = 0 AND u.is_active = 0";
                 }
             }
+
+            $whereClauses[] = "u.role != 'admin'";
             
             if ($role !== '') {
                 $whereClauses[] = "u.role = :role";
@@ -285,6 +336,174 @@ class AdminService extends config {
                 'message' => 'Failed to delete user: ' . $e->getMessage()
             ];
         }
+    }
+
+    /**
+     * Verify user account
+     */
+    public function verifyUser($userId, $adminId) {
+        try {
+            $this->beginTransaction();
+
+            $query = "UPDATE tbl_users SET is_verified = 1 WHERE id = ?";
+            $stmt = $this->pdo->prepare($query);
+            $stmt->execute([$userId]);
+
+            // Log activity
+            $this->logActivity($adminId, 'verify_user', 'user', $userId);
+
+            $this->commit();
+
+            return [
+                'success' => true,
+                'message' => 'User verified successfully'
+            ];
+        } catch (PDOException $e) {
+            $this->rollback();
+            error_log("Verify user error: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Failed to verify user: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Unverify user account
+     */
+    public function unverifyUser($userId, $adminId) {
+        try {
+            $this->beginTransaction();
+
+            $query = "UPDATE tbl_users SET is_verified = 0 WHERE id = ?";
+            $stmt = $this->pdo->prepare($query);
+            $stmt->execute([$userId]);
+
+            // Log activity
+            $this->logActivity($adminId, 'unverify_user', 'user', $userId);
+
+            $this->commit();
+
+            return [
+                'success' => true,
+                'message' => 'User unverified successfully'
+            ];
+        } catch (PDOException $e) {
+            $this->rollback();
+            error_log("Unverify user error: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Failed to unverify user: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Decline user account (permanently reject registration)
+     */
+    public function declineUser($userId, $adminId) {
+        try {
+            $this->beginTransaction();
+
+            // Set user as declined (inactive and unverified)
+            $query = "UPDATE tbl_users SET is_verified = 0, is_active = 0, updated_at = NOW() WHERE id = ?";
+            $stmt = $this->pdo->prepare($query);
+            $stmt->execute([$userId]);
+
+            // Log activity
+            $this->logActivity($adminId, 'decline_user', 'user', $userId);
+
+            $this->commit();
+
+            return [
+                'success' => true,
+                'message' => 'User declined successfully'
+            ];
+        } catch (PDOException $e) {
+            $this->rollback();
+            error_log("Decline user error: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Failed to decline user: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Get user details by ID
+     */
+    public function getUserDetails($userId) {
+        try {
+            $query = "SELECT u.*, up.business_name, up.business_type, up.rating,
+                             (SELECT COUNT(*) FROM tbl_coin_requests WHERE user_id = u.id) as total_requests,
+                             (SELECT COUNT(*) FROM tbl_coin_offers WHERE user_id = u.id) as total_offers,
+                             (SELECT COUNT(*) FROM tbl_transactions WHERE requestor_id = u.id OR offeror_id = u.id) as total_transactions_count
+                      FROM tbl_users u
+                      LEFT JOIN tbl_user_profiles up ON u.id = up.user_id
+                      WHERE u.id = ?";
+            
+            $stmt = $this->pdo->prepare($query);
+            $stmt->execute([$userId]);
+            
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Get user details error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Export users to CSV
+     */
+    public function exportUsers($format = 'csv') {
+        try {
+            $query = "SELECT u.id, u.username, u.email, u.first_name, u.last_name, u.phone, 
+                             u.role, u.is_verified, u.is_active, u.created_at, u.updated_at,
+                             up.business_name, up.business_type
+                      FROM tbl_users u
+                      LEFT JOIN tbl_user_profiles up ON u.id = up.user_id
+                      ORDER BY u.created_at DESC";
+            
+            $stmt = $this->pdo->prepare($query);
+            $stmt->execute();
+            $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            if ($format === 'csv') {
+                return $this->generateCSV($users);
+            }
+            
+            return $users;
+        } catch (PDOException $e) {
+            error_log("Export users error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Generate CSV content from user data
+     */
+    private function generateCSV($users) {
+        $csv = "ID,Username,Email,First Name,Last Name,Phone,Role,Verified,Active,Business Name,Business Type,Created At,Updated At\n";
+        
+        foreach ($users as $user) {
+            $csv .= sprintf('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"' . "\n",
+                $user['id'],
+                $user['username'],
+                $user['email'],
+                $user['first_name'] ?? '',
+                $user['last_name'] ?? '',
+                $user['phone'] ?? '',
+                $user['role'],
+                $user['is_verified'] ? 'Yes' : 'No',
+                $user['is_active'] ? 'Yes' : 'No',
+                $user['business_name'] ?? '',
+                $user['business_type'] ?? '',
+                $user['created_at'],
+                $user['updated_at']
+            );
+        }
+        
+        return $csv;
     }
 
     // ============ TRANSACTION MANAGEMENT ============

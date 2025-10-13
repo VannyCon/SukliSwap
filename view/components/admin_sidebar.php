@@ -6,18 +6,49 @@
 ?>
 
 <nav class="sidebar admin-sidebar">
-    <header>
+    <!-- <header>
         <div class="image-text">
             <span class="image">
-                <img src="../../../../assets/images/logo.png" alt="Cake Store Logo">
+                <img src="../../../../assets/images/logo.png" alt="SukliSwap Logo">
             </span>
             <div class="text logo-text">
                 <span class="name">SukliSwap</span>
-                <span id="adminBadge" class="badge bg-warning text-dark ms-2" style="display:none;">Admin</span>
             </div>
         </div>
         <i class='bx bx-chevron-right toggle'></i>
-    </header>
+    </header> -->
+
+    <div class="user-info-section d-flex align-items-center p-3 border-bottom bg-light">
+        <div class="user-avatar flex-shrink-0">
+            <img 
+                id="userProfileImage" 
+                src="../../../../assets/images/logo.png" 
+                alt="User Avatar" 
+                class="rounded-circle border border-2 border-secondary"
+                style="width: 40px; height: 40px; object-fit: cover;"
+            >
+        </div>
+        <div class="user-details ms-3 flex-grow-1">
+            <div class="user-name d-flex align-items-center">
+                <span id="userName" class="fw-bold me-2">Loading...</span>
+                
+            </div>
+            <div class="user-badges">
+                <span id="verificationBadge" class="badge bg-success text-white me-1" style="display:none;">
+                    <i class="fas fa-check-circle me-1"></i>Verified
+                </span>
+                <span id="adminBadge" class="badge bg-danger text-white me-1" style="display:none;">
+                    <i class="fas fa-crown me-1"></i>Admin
+                </span>
+                <span id="pendingBadge" class="badge bg-warning text-dark me-1" style="display:none;">
+                    <i class="fas fa-clock me-1"></i>Pending
+                </span>
+            </div>
+            <!-- <div class="user-email">
+                <small style="font-size: 10px;" id="userEmail" class="text-muted">Loading...</small>
+            </div> -->
+        </div>
+    </div>
 
     <div class="menu-bar">
         <div class="menu">
@@ -158,7 +189,6 @@
         </div>
 
         <div class="bottom-content">
-
             <!-- Logout Button -->
             <li class="nav-link">
                 <button class="btn-logout" onclick="handleLogout()">
@@ -234,18 +264,7 @@ class SidebarManager {
         const user = this.authManager.getUser();
         console.log('User data loaded:', user);
         if (user) {
-            // Update user role display
-            const userRoleElement = document.getElementById('userRole');
-            if (userRoleElement) {
-                userRoleElement.textContent = user.role.charAt(0).toUpperCase() + user.role.slice(1);
-            }
-
-            // Update username display
-            const userNameElement = document.getElementById('userName');
-            if (userNameElement) {
-                userNameElement.textContent = user.username;
-                localStorage.setItem('user_id', user.id);
-            }
+            this.updateUserInfo(user);
             console.log('User data loaded:', user.role);
             // Show appropriate navigation based on role
             this.showRoleBasedNavigation(user.role);
@@ -262,17 +281,7 @@ class SidebarManager {
             if (userData) {
                 const user = JSON.parse(userData);
                 
-                // Update user role display
-                const userRoleElement = document.getElementById('userRole');
-                if (userRoleElement) {
-                    userRoleElement.textContent = user.role.charAt(0).toUpperCase() + user.role.slice(1);
-                }
-
-                // Update username display
-                const userNameElement = document.getElementById('userName');
-                if (userNameElement) {
-                    userNameElement.textContent = user.username;
-                }
+                this.updateUserInfo(user);
                 console.log('User data fallback:', user.role);
                 // Show appropriate navigation based on role
                 this.showRoleBasedNavigation(user.role);
@@ -285,6 +294,75 @@ class SidebarManager {
         } catch (error) {
             console.error('Error loading user data fallback:', error);
             this.redirectToLogin();
+        }
+    }
+
+    updateUserInfo(user) {
+        try {
+            // Update username display
+            const userNameElement = document.getElementById('userName');
+            if (userNameElement) {
+                userNameElement.textContent = user.username || user.first_name || 'User';
+                localStorage.setItem('user_id', user.id);
+            }
+
+            // Update email display
+            const userEmailElement = document.getElementById('userEmail');
+            if (userEmailElement) {
+                userEmailElement.textContent = user.email || 'No email';
+            }
+
+            // Update profile image
+            const userProfileImage = document.getElementById('userProfileImage');
+            if (userProfileImage) {
+                if (user.profile_image) {
+                    // Construct the full path to the profile image
+                    const profileImagePath = `../../../../data/profile/customer/${user.profile_image}`;
+                    userProfileImage.src = profileImagePath;
+                    userProfileImage.onerror = function() {
+                        // Fallback to logo if image fails to load
+                        this.src = '../../../../assets/images/logo.png';
+                    };
+                } else {
+                    // No profile image, use logo as default
+                    userProfileImage.src = '../../../../assets/images/logo.png';
+                }
+            }
+
+            // Show/hide verification badge
+            const verificationBadge = document.getElementById('verificationBadge');
+            const pendingBadge = document.getElementById('pendingBadge');
+            
+            if (verificationBadge && pendingBadge) {
+                if (user.is_verified == 1) {
+                    verificationBadge.style.display = 'inline-block';
+                    pendingBadge.style.display = 'none';
+                } else {
+                    verificationBadge.style.display = 'none';
+                    pendingBadge.style.display = 'inline-block';
+                }
+            }
+
+            // Show/hide admin badge
+            const adminBadge = document.getElementById('adminBadge');
+            if (adminBadge) {
+                if (user.role === 'admin') {
+                    verificationBadge.style.display = 'none';
+                    adminBadge.style.display = 'inline-block';
+                } else {
+                    adminBadge.style.display = 'none';
+                }
+            }
+
+            console.log('User info updated successfully:', {
+                username: user.username,
+                email: user.email,
+                role: user.role,
+                is_verified: user.is_verified
+            });
+
+        } catch (error) {
+            console.error('Error updating user info:', error);
         }
     }
 

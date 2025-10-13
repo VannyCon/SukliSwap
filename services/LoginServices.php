@@ -18,13 +18,15 @@ class LoginServices {
             // Hash the password
             $hashedPassword = password_hash($userData['password'], PASSWORD_DEFAULT);
 
-            $query = "INSERT INTO tbl_users (username, email, password_hash, role) VALUES (?, ?, ?, ?)";
+            $query = "INSERT INTO tbl_users (username, email, password_hash, role, is_verified, is_active) VALUES (?, ?, ?, ?, ?, ?)";
             $stmt = $this->pdo->prepare($query);
             $stmt->execute([
                 $userData['username'],
                 $userData['email'],
                 $hashedPassword,
-                $userData['role'] ?? 'user'
+                $userData['role'] ?? 'user',
+                0, // is_verified = 0 (pending verification)
+                1  // is_active = 1 (active by default)
             ]);
 
             return $this->pdo->lastInsertId();
@@ -41,7 +43,26 @@ class LoginServices {
      */
     public function findByEmail($email) {
         try {
-            $query = "SELECT * FROM tbl_users WHERE email = ?";
+            $query = "SELECT 
+                    u.*, 
+                    p.id AS profile_id,
+                    p.user_id,
+                    p.business_name,
+                    p.business_type,
+                    p.address,
+                    p.latitude,
+                    p.longitude,
+                    p.preferred_meeting_location,
+                    p.meeting_location_lat,
+                    p.meeting_location_lng,
+                    p.bio,
+                    p.rating,
+                    p.total_transactions,
+                    p.created_at AS profile_created_at,
+                    p.updated_at AS profile_updated_at
+                FROM tbl_users u
+                LEFT JOIN tbl_user_profiles p ON p.user_id = u.id
+                WHERE u.email = ?";
             $stmt = $this->pdo->prepare($query);
             $stmt->execute([$email]);
             
@@ -59,7 +80,29 @@ class LoginServices {
      */
     public function findByUsername($username) {
         try {
-            $query = "SELECT * FROM tbl_users WHERE username = ?";
+            $query = "
+                SELECT 
+                    u.*, 
+                    p.id AS profile_id,
+                    p.user_id,
+                    p.business_name,
+                    p.business_type,
+                    p.address,
+                    p.latitude,
+                    p.longitude,
+                    p.preferred_meeting_location,
+                    p.meeting_location_lat,
+                    p.meeting_location_lng,
+                    p.bio,
+                    p.rating,
+                    p.total_transactions,
+                    p.created_at AS profile_created_at,
+                    p.updated_at AS profile_updated_at
+                FROM tbl_users u
+                LEFT JOIN tbl_user_profiles p ON p.user_id = u.id
+                WHERE u.username = ?
+                LIMIT 1
+            ";
             $stmt = $this->pdo->prepare($query);
             $stmt->execute([$username]);
             

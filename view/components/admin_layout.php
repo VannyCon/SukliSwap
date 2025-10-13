@@ -36,9 +36,9 @@ ob_start();
     <?php include 'toast.php'; ?>
     
     <!-- Loading Overlay -->
-    <div class="loading-overlay" id="loadingOverlay">
+    <!-- <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-spinner"></div>
-    </div>
+    </div> -->
     
     <!-- Auth JS -->
     <script src="../../../js/auth.js"></script>

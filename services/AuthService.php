@@ -85,20 +85,22 @@ class AuthService {
             'id' => $user['id'],
             'username' => $user['username'],
             'email' => $user['email'],
-            'role' => $user['role']
+            'role' => $user['role'],
+            'is_verified' => $user['is_verified']
         ];
 
         $token = $this->jwtService->generateToken($tokenPayload);
 
         return [
             'success' => true,
-            'message' => 'User registered successfully',
+            'message' => 'User registered successfully. Your account is pending admin verification.',
             'data' => [
                 'user' => [
                     'id' => $user['id'],
                     'username' => $user['username'],
                     'email' => $user['email'],
                     'role' => $user['role'],
+                    'is_verified' => $user['is_verified'],
                     'created_at' => $user['created_at']
                 ],
                 'token' => $token
@@ -141,12 +143,41 @@ class AuthService {
             ];
         }
 
+        // Check if account is verified
+        if ($user['is_verified'] != 1) {
+            return [
+                'success' => false,
+                'message' => 'Account is pending verification',
+                'code' => 'PENDING_VERIFICATION',
+                'data' => [
+                    'user' => [
+                        'id' => $user['id'],
+                        'username' => $user['username'],
+                        'email' => $user['email'],
+                        'role' => $user['role'],
+                        'is_verified' => $user['is_verified'],
+                        'created_at' => $user['created_at'],
+                        'full_name' => $user['first_name'] . ' ' . $user['last_name']
+                    ]
+                ]
+            ];
+        }
+
+        // Check if account is active
+        if ($user['is_active'] != 1) {
+            return [
+                'success' => false,
+                'message' => 'Account is deactivated. Please contact support.'
+            ];
+        }
+
         // Generate JWT token
         $tokenPayload = [
             'id' => $user['id'],
             'username' => $user['username'],
             'email' => $user['email'],
-            'role' => $user['role']
+            'role' => $user['role'],
+            'is_verified' => $user['is_verified']
         ];
 
         $token = $this->jwtService->generateToken($tokenPayload);
@@ -160,6 +191,7 @@ class AuthService {
                     'username' => $user['username'],
                     'email' => $user['email'],
                     'role' => $user['role'],
+                    'is_verified' => $user['is_verified'],
                     'created_at' => $user['created_at']
                 ],
                 'token' => $token
@@ -208,6 +240,8 @@ class AuthService {
                     'username' => $user['username'],
                     'email' => $user['email'],
                     'role' => $user['role'],
+                    'is_verified' => $user['is_verified'],
+                    'is_active' => $user['is_active'],
                     'created_at' => $user['created_at']
                 ]
             ]

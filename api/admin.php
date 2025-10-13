@@ -121,6 +121,54 @@ $middleware->requireAdmin(function() {
                 echo json_encode($result);
                 break;
 
+            case 'verifyUser':
+                $userId = $_POST['user_id'] ?? '';
+                
+                if (!$userId) {
+                    http_response_code(400);
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'User ID is required'
+                    ]);
+                    break;
+                }
+                
+                $result = $adminService->verifyUser($userId, $GLOBALS['current_user']['id']);
+                echo json_encode($result);
+                break;
+
+            case 'unverifyUser':
+                $userId = $_POST['user_id'] ?? '';
+                
+                if (!$userId) {
+                    http_response_code(400);
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'User ID is required'
+                    ]);
+                    break;
+                }
+                
+                $result = $adminService->unverifyUser($userId, $GLOBALS['current_user']['id']);
+                echo json_encode($result);
+                break;
+
+            case 'declineUser':
+                $userId = $_POST['user_id'] ?? '';
+                
+                if (!$userId) {
+                    http_response_code(400);
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'User ID is required'
+                    ]);
+                    break;
+                }
+                
+                $result = $adminService->declineUser($userId, $GLOBALS['current_user']['id']);
+                echo json_encode($result);
+                break;
+
             case 'updateSystemSetting':
                 $key = $_POST['key'] ?? '';
                 $value = $_POST['value'] ?? '';
@@ -182,24 +230,74 @@ $middleware->requireAdmin(function() {
                 $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
                 $size = isset($_GET['size']) ? intval($_GET['size']) : 20;
                 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
-                $status = isset($_GET['status']) ? trim($_GET['status']) : '';
+                $filter = isset($_GET['filter']) ? trim($_GET['filter']) : '';
                 $role = isset($_GET['role']) ? trim($_GET['role']) : '';
                 
-                $users = $adminService->getAllUsers($page, $size, $search, $status, $role);
-                $total = $adminService->countUsers($search, $status, $role);
+                $users = $adminService->getAllUsers($page, $size, $search, $filter, $role);
+                $total = $adminService->countUsers($search, $filter, $role);
                 $totalPages = $size > 0 ? (int)ceil($total / $size) : 1;
+                $statistics = $adminService->getUserStatistics();
                 
                 echo json_encode([
                     'success' => true,
-                    'data' => $users,
+                    'data' => [
+                        'users' => $users,
+                        'statistics' => $statistics
+                    ],
                     'meta' => [
                         'page' => $page,
                         'size' => $size,
                         'total' => $total,
                         'totalPages' => $totalPages,
-                        'search' => $search
+                        'search' => $search,
+                        'filter' => $filter
                     ]
                 ]);
+                break;
+
+            case 'getUserDetails':
+                $userId = $_GET['user_id'] ?? '';
+                
+                if (!$userId) {
+                    http_response_code(400);
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'User ID is required'
+                    ]);
+                    break;
+                }
+                
+                $user = $adminService->getUserDetails($userId);
+                
+                if ($user) {
+                    echo json_encode([
+                        'success' => true,
+                        'data' => $user
+                    ]);
+                } else {
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'User not found'
+                    ]);
+                }
+                break;
+
+            case 'exportUsers':
+                $format = $_GET['format'] ?? 'csv';
+                
+                $exportData = $adminService->exportUsers($format);
+                
+                if ($exportData) {
+                    echo json_encode([
+                        'success' => true,
+                        'data' => $exportData
+                    ]);
+                } else {
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'Failed to export users'
+                    ]);
+                }
                 break;
 
             case 'getAllTransactions':

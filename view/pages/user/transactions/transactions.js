@@ -61,7 +61,7 @@ class TransactionsManager {
 
         } catch (error) {
             console.error('Error loading transactions:', error);
-            this.showError('Failed to load transactions');
+            CustomToast.show('error', 'Failed to load transactions');
         }
     }
 
@@ -161,13 +161,20 @@ class TransactionsManager {
                 break;
         }
 
+        // if (['scheduled', 'in_progress'].includes(transaction.status)) {
+        //     buttons.push(`
+        //         <button class="btn btn-outline-danger btn-sm" onclick="transactionsManager.cancelTransaction(${transaction.id})">
+        //             <i class="fas fa-times"></i> Cancel
+        //         </button>
+        //         <button class="btn btn-outline-warning btn-sm" onclick="transactionsManager.reportDisputeModal(${transaction.id})">
+        //             <i class="fas fa-exclamation-triangle"></i> Dispute
+        //         </button>
+        //     `);
+        // }
         if (['scheduled', 'in_progress'].includes(transaction.status)) {
             buttons.push(`
                 <button class="btn btn-outline-danger btn-sm" onclick="transactionsManager.cancelTransaction(${transaction.id})">
                     <i class="fas fa-times"></i> Cancel
-                </button>
-                <button class="btn btn-outline-warning btn-sm" onclick="transactionsManager.reportDisputeModal(${transaction.id})">
-                    <i class="fas fa-exclamation-triangle"></i> Dispute
                 </button>
             `);
         }
@@ -246,7 +253,7 @@ class TransactionsManager {
             }
         } catch (error) {
             console.error('Error loading transaction details:', error);
-            this.showError('Failed to load transaction details');
+            CustomToast.show('error', 'Failed to load transaction details');
         }
     }
 
@@ -367,6 +374,7 @@ class TransactionsManager {
                     if (result.success) {
                         bootstrap.Modal.getInstance(document.getElementById('startTransactionModal'))?.hide();
                         new bootstrap.Modal(document.getElementById('qrSuccessModal')).show();
+                        CustomToast.show('success', 'Transaction completed successfully');
                         this.loadTransactions();
                     } else {
                         scanStatus.textContent = result.message || 'Verification failed. Try again.';
@@ -435,7 +443,7 @@ class TransactionsManager {
 
         } catch (error) {
             console.error('Error cancelling transaction:', error);
-            this.showError('Failed to cancel transaction');
+            CustomToast.show('error', 'Failed to cancel transaction');
         }
     }
 
@@ -466,7 +474,7 @@ class TransactionsManager {
             }
         } catch (error) {
             console.error('Error reporting dispute:', error);
-            this.showError('Failed to report dispute');
+            CustomToast.show('error', 'Failed to report dispute');
         }
     }
 
@@ -504,15 +512,6 @@ class TransactionsManager {
         this.loadTransactions();
     }
 
-    showSuccess(message) {
-        // You can implement a toast notification system here
-        alert(message);
-    }
-
-    showError(message) {
-        // You can implement a toast notification system here
-        alert('Error: ' + message);
-    }
 }
 
 // Initialize when DOM is loaded

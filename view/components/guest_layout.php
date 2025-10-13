@@ -292,9 +292,9 @@ body {
     <?php include 'toast.php'; ?>
     
     <!-- Loading Overlay -->
-    <div class="loading-overlay" id="loadingOverlay">
+    <!-- <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-spinner"></div>
-    </div>
+    </div> -->
     <!-- Page-specific JS -->
     <script src="../../../js/notifications.js"></script>
     

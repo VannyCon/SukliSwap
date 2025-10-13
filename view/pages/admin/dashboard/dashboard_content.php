@@ -135,8 +135,11 @@
                             <input type="radio" class="btn-check" name="userFilter" id="allUsers" value="" checked>
                             <label class="btn btn-outline-primary" for="allUsers">All</label>
 
-                            <input type="radio" class="btn-check" name="userFilter" id="activeUsers" value="active">
-                            <label class="btn btn-outline-success" for="activeUsers">Active</label>
+                            <input type="radio" class="btn-check" name="userFilter" id="pendingUsers" value="pending">
+                            <label class="btn btn-outline-warning" for="pendingUsers">Pending</label>
+
+                            <input type="radio" class="btn-check" name="userFilter" id="verifiedUsers" value="verified">
+                            <label class="btn btn-outline-success" for="verifiedUsers">Verified</label>
 
                             <input type="radio" class="btn-check" name="userFilter" id="inactiveUsers" value="inactive">
                             <label class="btn btn-outline-danger" for="inactiveUsers">Inactive</label>
