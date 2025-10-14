@@ -375,6 +375,70 @@ class TransactionService extends config {
     }
 
     /**
+     * Get all transactions from all users (Admin view)
+     */
+    public function getAllTransactions($filters = []) {
+        try {
+            $sql = "SELECT t.*, 
+                           ct.denomination, ct.description,
+                           r.username as requestor_username, r.first_name as requestor_first_name, r.last_name as requestor_last_name,
+                           o.username as offeror_username, o.first_name as offeror_first_name, o.last_name as offeror_last_name,
+                           rp.business_name as requestor_business_name, rp.business_type as requestor_business_type,
+                           op.business_name as offeror_business_name, op.business_type as offeror_business_type
+                    FROM tbl_transactions t
+                    JOIN tbl_coin_types ct ON t.coin_type_id = ct.id
+                    JOIN tbl_users r ON t.requestor_id = r.id
+                    JOIN tbl_users o ON t.offeror_id = o.id
+                    LEFT JOIN tbl_user_profiles rp ON t.requestor_id = rp.user_id
+                    LEFT JOIN tbl_user_profiles op ON t.offeror_id = op.user_id
+                    WHERE 1=1";
+            
+            $params = [];
+            
+            // Add filters
+            if (!empty($filters['status'])) {
+                $sql .= " AND t.status = ?";
+                $params[] = $filters['status'];
+            }
+            
+            if (!empty($filters['date_from'])) {
+                $sql .= " AND DATE(t.created_at) >= ?";
+                $params[] = $filters['date_from'];
+            }
+            
+            if (!empty($filters['date_to'])) {
+                $sql .= " AND DATE(t.created_at) <= ?";
+                $params[] = $filters['date_to'];
+            }
+            
+            if (!empty($filters['search'])) {
+                $sql .= " AND (t.meeting_location LIKE ? OR r.username LIKE ? OR o.username LIKE ? OR rp.business_name LIKE ? OR op.business_name LIKE ?)";
+                $searchTerm = "%{$filters['search']}%";
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+            }
+            
+            $sql .= " ORDER BY t.created_at DESC";
+            
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            
+            return [
+                'success' => true,
+                'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Error fetching all transactions: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
      * Get transaction by ID
      */
     public function getTransactionById($transactionId, $userId = null) {

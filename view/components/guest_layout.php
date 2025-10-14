@@ -21,12 +21,10 @@ ob_start();
     <!-- Leaflet Draw CSS -->
     <!-- <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" /> -->
     <!-- Additional map styling -->
-    <link rel='stylesheet' href='https://unpkg.com/maplibre-gl@5.7.3/dist/maplibre-gl.css' />
+    <!-- <link rel='stylesheet' href='https://unpkg.com/maplibre-gl@5.7.3/dist/maplibre-gl.css' />
     <script src='https://unpkg.com/maplibre-gl@5.7.3/dist/maplibre-gl.js'></script>
-    
-    <!-- Mapbox GL Draw for professional drawing tools -->
     <script src="https://www.unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.js"></script>
-    <link rel="stylesheet" href="https://www.unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.css" />
+    <link rel="stylesheet" href="https://www.unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.css" /> -->
     
     <!-- Turf.js for area calculations -->
     <script type="module">

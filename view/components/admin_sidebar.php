@@ -68,14 +68,14 @@
                 </li>
                 
                 <li class="nav-link">
-                    <a href="../../admin/coin_requests/">
+                    <a href="../../admin/requests/">
                         <i class='fas fa-hand-holding-usd icon'></i>
                         <span class="text nav-text">Coin Requests</span>
                     </a>
                 </li>
                 
                 <li class="nav-link">
-                    <a href="../../admin/coin_offers/">
+                    <a href="../../admin/offers/">
                         <i class='fas fa-coins icon'></i>
                         <span class="text nav-text">Coin Offers</span>
                     </a>
@@ -97,7 +97,7 @@
                 </li> -->
                 
                 <li class="nav-link">
-                    <a href="../../admin/safe_places/">
+                    <a href="../../admin/safe_place/">
                         <i class='fas fa-map-marker-alt icon'></i>
                         <span class="text nav-text">Safe Places</span>
                     </a>

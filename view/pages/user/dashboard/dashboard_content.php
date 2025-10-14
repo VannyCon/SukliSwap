@@ -164,13 +164,13 @@
                         <div class="card-body p-3 p-md-4">
                             <div class="row g-2">
                                 <div class="col-12 col-sm-6">
-                                    <button class="btn btn-info w-100 d-flex align-items-center justify-content-center" onclick="coinExchangeManager.loadActiveRequests()">
+                                    <button class="btn btn-info w-100 d-flex align-items-center justify-content-center" onclick="loadActiveRequests()">
                                         <i class="fas fa-search me-2"></i> 
                                         <span class="d-none d-sm-inline">Browse</span> Requests
                                     </button>
                                 </div>
                                 <div class="col-12 col-sm-6">
-                                    <button class="btn btn-warning w-100 d-flex align-items-center justify-content-center" onclick="coinExchangeManager.loadActiveOffers()">
+                                    <button class="btn btn-warning w-100 d-flex align-items-center justify-content-center" onclick="loadActiveOffers()">
                                         <i class="fas fa-search me-2"></i> 
                                         <span class="d-none d-sm-inline">Browse</span> Offers
                                     </button>

@@ -199,7 +199,6 @@
             </div>
         </div>
     </div>
-    
 </div>
 
 <!-- Edit Offer Modal -->

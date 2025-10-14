@@ -22,18 +22,17 @@
 
     <!-- <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" /> -->
 
-    <link rel='stylesheet' href='https://unpkg.com/maplibre-gl@5.7.3/dist/maplibre-gl.css' />
-    <script src='https://unpkg.com/maplibre-gl@5.7.3/dist/maplibre-gl.js'></script>
-    
-    <!-- Mapbox GL Draw for professional drawing tools -->
-    <script src="https://www.unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.js"></script>
-    <link rel="stylesheet" href="https://www.unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.css" />
-    
-    <!-- Turf.js for area calculations -->
-    <script type="module">
-        import * as turf from 'https://esm.sh/@turf/turf@7.1.0';
-        window.turf = turf;
-    </script>
+
+    <?php if(isset($page) && $page == 'map'): ?>
+        <link rel='stylesheet' href='https://unpkg.com/maplibre-gl@5.7.3/dist/maplibre-gl.css' />
+        <script src='https://unpkg.com/maplibre-gl@5.7.3/dist/maplibre-gl.js'></script>
+        <script src="https://www.unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.js"></script>
+        <link rel="stylesheet" href="https://www.unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.css" />
+        <script type="module">
+            import * as turf from 'https://esm.sh/@turf/turf@7.1.0';
+            window.turf = turf;
+        </script>
+    <?php endif; ?>
     <!-- Additional map styling -->
     <style>
         /* MapLibre GL specific styles */
@@ -110,11 +109,6 @@
 </head>
 <body>
 
-<script src="https://www.unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.js"></script>
-    <link
-        rel="stylesheet"
-        href="https://www.unpkg.com/@mapbox/mapbox-gl-draw@1.5.0/dist/mapbox-gl-draw.css"
-    />
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 

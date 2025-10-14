@@ -24,7 +24,7 @@
                                 <option value="in_progress">In Progress</option>
                                 <option value="completed">Completed</option>
                                 <option value="cancelled">Cancelled</option>
-                                <option value="disputed">Disputed</option>
+                                <!-- <option value="disputed">Disputed</option> -->
                             </select>
                         </div>
                         <div class="col-md-2">
@@ -138,7 +138,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-2">
+        <!-- <div class="col-md-2">
             <div class="card bg-secondary text-white">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
@@ -152,7 +152,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> -->
     </div>
 
     <!-- Transactions List -->

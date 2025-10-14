@@ -4,6 +4,7 @@ require_once '../../../components/render.php';
 
 // Use the new clean approach
 renderPage(__DIR__ . '/requests_content.php', [
+    'page' => 'map',
     'page_js' => ['requests.js']
 ]);
 ?>

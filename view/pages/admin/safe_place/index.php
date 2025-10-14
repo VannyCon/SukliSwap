@@ -3,8 +3,8 @@
 require_once '../../../components/render.php';
 
 // Use the new clean approach
-renderPage(__DIR__ . '/offers_content.php', [
+renderPage(__DIR__ . '/safeplace_content.php', [
     'page' => 'map',
-    'page_js' => ['offers.js']
+    'page_js' => ['main.js']
 ]);
 ?>

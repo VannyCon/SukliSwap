@@ -6,6 +6,7 @@ let headerAPI = null;
 let formHeaderAPI = null;
 let userRequestsAPI = null;
 let trCoinRequestAPI = null;
+let safePlaceAPI = null;
 let coinTypes = [];
 let requests = [];
 class RequestsManager {
@@ -14,6 +15,7 @@ class RequestsManager {
         coinExchangeAPI = authManager.API_CONFIG.baseURL + 'coin_exchange.php';
         userRequestsAPI = authManager.API_CONFIG.baseURL + 'user_requests.php';
         trCoinRequestAPI = authManager.API_CONFIG.baseURL + 'tr_coin_request.php';
+        safePlaceAPI = authManager.API_CONFIG.baseURL + 'safe_places.php';
         headerAPI = authManager.API_CONFIG.getHeaders();
         formHeaderAPI = authManager.API_CONFIG.getFormHeaders();
         this.authManager = authManager;
@@ -24,6 +26,9 @@ class RequestsManager {
             coin_type_id: '',
             search: ''
         };
+        this.safePlaces = [];
+        this.map = null;
+        this.markers = [];
         this.init();
     }
 
@@ -540,6 +545,41 @@ class RequestsManager {
             this.showError('Location picker is unavailable');
             return;
         }
+          // Function to close location picker and return to parent modal
+		const closeLocationPicker = () => {
+			modalEl.classList.remove('show');
+			modalEl.style.display = 'none';
+			if (parentModalEl) {
+				parentModalEl.style.display = 'block';
+				parentModalEl.classList.add('show');
+			}
+			// Clean up map
+			if (this.map) {
+				this.map.remove();
+				this.map = null;
+			}
+			if (window.__locationPickerMap) {
+				window.__locationPickerMap = null;
+			}
+		};
+		
+		// Attach close handlers to close and cancel buttons
+		const closeBtn = modalEl.querySelector('.btn-close');
+		const cancelBtn = modalEl.querySelector('.btn-secondary[data-bs-dismiss="modal"]');
+		
+		if (closeBtn) {
+			closeBtn.onclick = (e) => {
+				e.preventDefault();
+				closeLocationPicker();
+			};
+		}
+		
+		if (cancelBtn) {
+			cancelBtn.onclick = (e) => {
+				e.preventDefault();
+				closeLocationPicker();
+			};
+		}
 		// Follow requested behavior: manually toggle displays and 'show' class to bypass .fade opacity
 		if (parentModalEl) {
 			parentModalEl.classList.remove('show');
@@ -599,6 +639,9 @@ class RequestsManager {
                 });
 
                 window.__locationPickerMap = map;
+                // Set the map instance and load safe places AFTER map is initialized
+                this.map = map;
+                this.loadSafePlaces();
                 setTimeout(() => map.resize(), 200);
             } catch (e) {
                 console.error('Failed to initialize location picker map', e);
@@ -725,6 +768,85 @@ class RequestsManager {
         
         console.log('Found request:', request);
         return request;
+    }
+    async loadSafePlaces() {
+        try {
+            const response = await axios.get(`${safePlaceAPI}?action=getSafePlacesForMapLibre`, {
+                headers: headerAPI
+            });
+
+            if (response.data.success) {
+                const result = response.data.data;
+                // Convert GeoJSON features to safe places format
+                this.safePlaces = result.features.map(feature => ({
+                    id: feature.properties.id,
+                    lat: feature.geometry.coordinates[1], // GeoJSON uses [lng, lat]
+                    long: feature.geometry.coordinates[0],
+                    location_name: feature.properties.name,
+                    description: feature.properties.description,
+                    created_by: feature.properties.created_by,
+                    is_active: feature.properties.is_active,
+                    created_at: feature.properties.created_at,
+                    updated_at: feature.properties.updated_at,
+                    created_by_username: feature.properties.created_by_username
+                }));
+                this.updateMapWithSafePlaces();
+            }
+            
+        } catch (error) {
+            console.error('Failed to load safe places:', error);
+        }
+    }
+
+    updateMapWithSafePlaces() {
+        if (!this.map) return;
+
+        // Clear existing markers
+        this.markers.forEach(marker => marker.remove());
+        this.markers = [];
+
+        // Add markers for each safe place
+        this.safePlaces.forEach(safePlace => {
+            if (safePlace.lat && safePlace.long) {
+                // Create popup content
+                const popupContent = `
+                    <div class="map-popup">
+                        <h6><strong><i class="fas fa-map-marker-alt"></i>${safePlace.location_name}</strong></h6>
+                        ${safePlace.description ? `<p class="mb-2">${safePlace.description}</p>` : ''}
+                    </div>
+                `;
+
+                // Create marker
+                const marker = new maplibregl.Marker({
+                    color: safePlace.is_active == 1 ? '#007cba' : '#6c757d'
+                })
+                .setLngLat([parseFloat(safePlace.long), parseFloat(safePlace.lat)])
+                .setPopup(new maplibregl.Popup({ offset: 25 }).setHTML(popupContent))
+                .addTo(this.map);
+
+                // Add click event to marker to prevent map click event
+                marker.getElement().addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    // Toggle the popup when marker is clicked
+                    if (marker.getPopup().isOpen()) {
+                        marker.getPopup().remove();
+                    } else {
+                        marker.getPopup().addTo(this.map);
+                    }
+                });
+
+                this.markers.push(marker);
+            }
+        });
+
+        // Fit map to show all markers if there are any
+        if (this.markers.length > 0) {
+            const bounds = new maplibregl.LngLatBounds();
+            this.markers.forEach(marker => {
+                bounds.extend(marker.getLngLat());
+            });
+            this.map.fitBounds(bounds, { padding: 50 });
+        }
     }
 }
 

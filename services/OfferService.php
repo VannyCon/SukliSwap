@@ -90,6 +90,57 @@ class OfferService extends config {
     }
 
     /**
+     * Get all offers from all users (Admin view)
+     */
+    public function getAllOffers($filters = []) {
+        try {
+            $sql = "SELECT co.*, ct.denomination, ct.description, ct.image_path as coin_image_path,
+                           u.username, u.first_name, u.last_name
+                    FROM tbl_coin_offers co 
+                    JOIN tbl_coin_types ct ON co.coin_type_id = ct.id 
+                    LEFT JOIN tbl_users u ON co.user_id = u.id
+                    WHERE 1=1";
+            
+            $params = [];
+            
+            // Add filters
+            if (!empty($filters['status'])) {
+                $sql .= " AND co.status = ?";
+                $params[] = $filters['status'];
+            }
+            
+            if (!empty($filters['coin_type_id'])) {
+                $sql .= " AND co.coin_type_id = ?";
+                $params[] = $filters['coin_type_id'];
+            }
+            
+            if (!empty($filters['search'])) {
+                $sql .= " AND (co.preferred_meeting_location LIKE ? OR co.notes LIKE ? OR u.username LIKE ?)";
+                $searchTerm = "%{$filters['search']}%";
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+                $params[] = $searchTerm;
+            }
+            
+            $sql .= " ORDER BY co.created_at DESC";
+            
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            
+            return [
+                'success' => true,
+                'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Error fetching all offers: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
      * Get offer by ID
      */
     public function getOfferById($offerId, $userId = null) {

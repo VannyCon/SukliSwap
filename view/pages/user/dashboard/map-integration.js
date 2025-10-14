@@ -2,9 +2,6 @@
  * SukliSwap Map Integration JavaScript
  * Handles MapLibre integration for location-based matching and visualization
  */
-let coinExchangeAPI = null;
-let headerAPI = null;
-let formHeaderAPI = null;
 class MapIntegrationManager {
     constructor() {
         this.map = null;
@@ -22,7 +19,9 @@ class MapIntegrationManager {
             pitch: 0,
             bearing: 0
         };
-        
+        this.safePlaces = [];
+        this.map = null;
+        this.markers = [];
         this.init();
     }
 
@@ -84,7 +83,7 @@ class MapIntegrationManager {
                 console.log('Map loaded successfully');
                 this.onMapLoaded();
             });
-
+            
             // Handle map errors
             this.map.on('error', (e) => {
                 console.error('Map error:', e);

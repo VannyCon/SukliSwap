@@ -4,6 +4,7 @@
 let coinExchangeAPI = null;
 let coinOffersAPI = null;
 let trCoinOfferAPI = null;
+let safePlaceAPI = null;
 let headerAPI = null;
 let formHeaderAPI = null;
 class OffersManager {
@@ -14,6 +15,7 @@ class OffersManager {
         coinExchangeAPI = authManager.API_CONFIG.baseURL + 'coin_exchange.php';
         coinOffersAPI = authManager.API_CONFIG.baseURL + 'user_offers.php';
         trCoinOfferAPI = authManager.API_CONFIG.baseURL + 'tr_coin_offer.php';
+        safePlaceAPI = authManager.API_CONFIG.baseURL + 'safe_places.php';
         headerAPI = authManager.API_CONFIG.getHeaders();
         formHeaderAPI = authManager.API_CONFIG.getFormHeaders();
         this.filters = {
@@ -21,6 +23,9 @@ class OffersManager {
             coin_type_id: '',
             search: ''
         };
+        this.safePlaces = [];
+        this.map = null;
+        this.markers = [];
         this.init();
     }
 
@@ -544,6 +549,42 @@ class OffersManager {
             this.showError('Location picker is unavailable');
             return;
         }
+        // Function to close location picker and return to parent modal
+		const closeLocationPicker = () => {
+			modalEl.classList.remove('show');
+			modalEl.style.display = 'none';
+			if (parentModalEl) {
+				parentModalEl.style.display = 'block';
+				parentModalEl.classList.add('show');
+			}
+			// Clean up map
+			if (this.map) {
+				this.map.remove();
+				this.map = null;
+			}
+			if (window.__locationPickerMap) {
+				window.__locationPickerMap = null;
+			}
+		};
+		
+		// Attach close handlers to close and cancel buttons
+		const closeBtn = modalEl.querySelector('.btn-close');
+		const cancelBtn = modalEl.querySelector('.btn-secondary[data-bs-dismiss="modal"]');
+		
+		if (closeBtn) {
+			closeBtn.onclick = (e) => {
+				e.preventDefault();
+				closeLocationPicker();
+			};
+		}
+		
+		if (cancelBtn) {
+			cancelBtn.onclick = (e) => {
+				e.preventDefault();
+				closeLocationPicker();
+			};
+		}
+        
 		// Follow requested behavior: manually toggle displays and 'show' class to bypass .fade opacity
 		if (parentModalEl) {
 			parentModalEl.classList.remove('show');
@@ -585,24 +626,27 @@ class OffersManager {
                     const lngLat = [e.lngLat.lng, e.lngLat.lat];
                     placeMarker(lngLat);
                     // Confirm selection
-                    const ok = confirm(`Use this meeting place?\nLatitude: ${lngLat[1].toFixed(6)}\nLongitude: ${lngLat[0].toFixed(6)}`);
-                    if (ok) {
-                        const latInputId = prefix === 'offer' ? 'offer_meeting_latitude' : 'edit_offer_meeting_latitude';
-                        const lngInputId = prefix === 'offer' ? 'offer_meeting_longitude' : 'edit_offer_meeting_longitude';
-                        document.getElementById(latInputId).value = lngLat[1];
-                        document.getElementById(lngInputId).value = lngLat[0];
-						// Close second modal and reopen first (per requested behavior)
-						modalEl.classList.remove('show');
-						modalEl.style.display = 'none';
-						if (parentModalEl) {
-							parentModalEl.style.display = 'block';
-							parentModalEl.classList.add('show');
-						}
-                        CustomToast.show('success', 'Meeting location set');
+                    // const ok = confirm(`Use this meeting place?\nLatitude: ${lngLat[1].toFixed(6)}\nLongitude: ${lngLat[0].toFixed(6)}`);
+                    // if (ok) {
+                    // }
+                    const latInputId = prefix === 'offer' ? 'offer_meeting_latitude' : 'edit_offer_meeting_latitude';
+                    const lngInputId = prefix === 'offer' ? 'offer_meeting_longitude' : 'edit_offer_meeting_longitude';
+                    document.getElementById(latInputId).value = lngLat[1];
+                    document.getElementById(lngInputId).value = lngLat[0];
+                    // Close second modal and reopen first (per requested behavior)
+                    modalEl.classList.remove('show');
+                    modalEl.style.display = 'none';
+                    if (parentModalEl) {
+                        parentModalEl.style.display = 'block';
+                        parentModalEl.classList.add('show');
                     }
+                    CustomToast.show('success', 'Meeting location set');
                 });
 
                 window.__locationPickerMap = map;
+                // Set the map instance and load safe places AFTER map is initialized
+                this.map = map;
+                this.loadSafePlaces();
                 setTimeout(() => map.resize(), 200);
             } catch (e) {
                 console.error('Failed to initialize location picker map', e);
@@ -706,6 +750,85 @@ class OffersManager {
         
         console.log('Found offer:', offer);
         return offer;
+    }
+    async loadSafePlaces() {
+        try {
+            const response = await axios.get(`${safePlaceAPI}?action=getSafePlacesForMapLibre`, {
+                headers: headerAPI
+            });
+
+            if (response.data.success) {
+                const result = response.data.data;
+                // Convert GeoJSON features to safe places format
+                this.safePlaces = result.features.map(feature => ({
+                    id: feature.properties.id,
+                    lat: feature.geometry.coordinates[1], // GeoJSON uses [lng, lat]
+                    long: feature.geometry.coordinates[0],
+                    location_name: feature.properties.name,
+                    description: feature.properties.description,
+                    created_by: feature.properties.created_by,
+                    is_active: feature.properties.is_active,
+                    created_at: feature.properties.created_at,
+                    updated_at: feature.properties.updated_at,
+                    created_by_username: feature.properties.created_by_username
+                }));
+                this.updateMapWithSafePlaces();
+            }
+            
+        } catch (error) {
+            console.error('Failed to load safe places:', error);
+        }
+    }
+
+    updateMapWithSafePlaces() {
+        if (!this.map) return;
+
+        // Clear existing markers
+        this.markers.forEach(marker => marker.remove());
+        this.markers = [];
+
+        // Add markers for each safe place
+        this.safePlaces.forEach(safePlace => {
+            if (safePlace.lat && safePlace.long) {
+                // Create popup content
+                const popupContent = `
+                    <div class="map-popup">
+                        <h6><strong><i class="fas fa-map-marker-alt"></i>${safePlace.location_name}</strong></h6>
+                        ${safePlace.description ? `<p class="mb-2">${safePlace.description}</p>` : ''}
+                    </div>
+                `;
+
+                // Create marker
+                const marker = new maplibregl.Marker({
+                    color: safePlace.is_active == 1 ? '#007cba' : '#6c757d'
+                })
+                .setLngLat([parseFloat(safePlace.long), parseFloat(safePlace.lat)])
+                .setPopup(new maplibregl.Popup({ offset: 25 }).setHTML(popupContent))
+                .addTo(this.map);
+
+                // Add click event to marker to prevent map click event
+                marker.getElement().addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    // Toggle the popup when marker is clicked
+                    if (marker.getPopup().isOpen()) {
+                        marker.getPopup().remove();
+                    } else {
+                        marker.getPopup().addTo(this.map);
+                    }
+                });
+
+                this.markers.push(marker);
+            }
+        });
+
+        // Fit map to show all markers if there are any
+        if (this.markers.length > 0) {
+            const bounds = new maplibregl.LngLatBounds();
+            this.markers.forEach(marker => {
+                bounds.extend(marker.getLngLat());
+            });
+            this.map.fitBounds(bounds, { padding: 50 });
+        }
     }
 }
 

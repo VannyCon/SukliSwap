@@ -8,6 +8,7 @@ let adminAPI = null;
 let trCoinOfferAPI = null;
 let trCoinRequestAPI = null;
 let headerAPI = null;
+let safePlaceAPI = null;
 let formHeaderAPI = null;
 let user_id = null;
 class CoinExchangeManager {
@@ -21,12 +22,16 @@ class CoinExchangeManager {
         formHeaderAPI = this.authManager.API_CONFIG.getFormHeaders();
         trCoinOfferAPI = this.authManager.API_CONFIG.baseURL + 'tr_coin_offer.php';
         trCoinRequestAPI = this.authManager.API_CONFIG.baseURL + 'tr_coin_request.php';
+        safePlaceAPI = this.authManager.API_CONFIG.baseURL + 'safe_places.php';
         this.currentUser = null;
         this.coinTypes = [];
         this.activeRequests = [];
         this.activeOffers = [];
         this.userMatches = [];
         this.userTransactions = [];
+        this.safePlaces = [];
+        this.map = null;
+        this.markers = [];
         this.init();
     }
 
@@ -1154,11 +1159,99 @@ class CoinExchangeManager {
             map.addControl(new maplibregl.NavigationControl(), 'top-right');
             map.on('load', () => {
                 new maplibregl.Marker({ color: '#e11d48' }).setLngLat([lng, lat]).addTo(map);
+                // Load safe places after map is ready
+                this.loadSafePlaces(map);
             });
             // Resize map when modal layout settles
             setTimeout(() => map.resize(), 300);
         } catch (e) {
             console.warn('Mini map init failed', e);
+        }
+    }
+    async loadSafePlaces(mapInstance = null) {
+        try {
+            const response = await axios.get(`${safePlaceAPI}?action=getSafePlacesForMapLibre`, {
+                headers: headerAPI
+            });
+
+            if (response.data.success) {
+                const result = response.data.data;
+                // Convert GeoJSON features to safe places format
+                this.safePlaces = result.features.map(feature => ({
+                    id: feature.properties.id,
+                    lat: feature.geometry.coordinates[1], // GeoJSON uses [lng, lat]
+                    long: feature.geometry.coordinates[0],
+                    location_name: feature.properties.name,
+                    description: feature.properties.description,
+                    created_by: feature.properties.created_by,
+                    is_active: feature.properties.is_active,
+                    created_at: feature.properties.created_at,
+                    updated_at: feature.properties.updated_at,
+                    created_by_username: feature.properties.created_by_username
+                }));
+                this.updateMapWithSafePlaces(mapInstance);
+            }
+            
+        } catch (error) {
+            console.error('Failed to load safe places:', error);
+        }
+    }
+
+    updateMapWithSafePlaces(mapInstance = null) {
+        // Use provided map instance or fall back to this.map
+        const targetMap = mapInstance || this.map;
+        
+        if (!targetMap) {
+            console.warn('Map not initialized yet, cannot add safe place markers');
+            return;
+        }
+
+        // Don't clear all markers - only add safe place markers to preserve user/offer/request markers
+        
+        // Add markers for each safe place
+        this.safePlaces.forEach(safePlace => {
+            if (safePlace.lat && safePlace.long) {
+                // Create popup content
+                const popupContent = `
+                    <div class="map-popup">
+                        <h6><strong><i class="fas fa-map-marker-alt"></i> ${safePlace.location_name}</strong></h6>
+                        ${safePlace.description ? `<p class="mb-2">${safePlace.description}</p>` : ''}
+                    </div>
+                `;
+
+                // Create marker
+                const marker = new maplibregl.Marker({
+                    color: safePlace.is_active == 1 ? '#007cba' : '#6c757d'
+                })
+                .setLngLat([parseFloat(safePlace.long), parseFloat(safePlace.lat)])
+                .setPopup(new maplibregl.Popup({ offset: 25 }).setHTML(popupContent))
+                .addTo(targetMap);
+
+                // Add click event to marker to prevent map click event
+                marker.getElement().addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    // Toggle the popup when marker is clicked
+                    if (marker.getPopup().isOpen()) {
+                        marker.getPopup().remove();
+                    } else {
+                        marker.getPopup().addTo(targetMap);
+                    }
+                });
+
+                // Only track markers if using the main map (not mini maps)
+                if (!mapInstance) {
+                    this.markers.push(marker);
+                }
+            }
+        });
+
+        // Fit map to show all markers if there are any (only for main map)
+        if (!mapInstance && this.markers.length > 0) {
+            const bounds = new maplibregl.LngLatBounds();
+            this.markers.forEach(marker => {
+                bounds.extend(marker.getLngLat());
+            });
+            targetMap.fitBounds(bounds, { padding: 50 });
         }
     }
 }
@@ -1236,6 +1329,18 @@ window.viewOfferDetails = function(offerId) {
 window.findMatchesForRequest = function(requestId) {
     if (window.coinExchangeManager) {
         return window.coinExchangeManager.findMatchesForRequest(requestId);
+    }
+};
+
+window.loadActiveRequests = function() {
+    if (window.coinExchangeManager) {
+        return window.coinExchangeManager.loadActiveRequests();
+    }
+};
+
+window.loadActiveOffers = function() {
+    if (window.coinExchangeManager) {
+        return window.coinExchangeManager.loadActiveOffers();
     }
 };
 

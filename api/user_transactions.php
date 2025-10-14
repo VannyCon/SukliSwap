@@ -204,6 +204,36 @@ $middleware->requireAuth(function() {
                     ]
                 ]);
                 break;
+
+            case 'getAllTransactions':
+                // Admin: Get all transactions from all users
+                $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
+                $size = isset($_GET['size']) ? intval($_GET['size']) : 12;
+                $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+                $status = isset($_GET['status']) ? trim($_GET['status']) : '';
+                $type = isset($_GET['type']) ? trim($_GET['type']) : '';
+                $dateFrom = isset($_GET['date_from']) ? trim($_GET['date_from']) : '';
+                $dateTo = isset($_GET['date_to']) ? trim($_GET['date_to']) : '';
+                
+                $filters = [
+                    'status' => $status,
+                    'type' => $type,
+                    'date_from' => $dateFrom,
+                    'date_to' => $dateTo,
+                    'search' => $search
+                ];
+                
+                $result = $transactionService->getAllTransactions($filters);
+                echo json_encode([
+                    'success' => true,
+                    'data' => $result['data'] ?? $result,
+                    'meta' => [
+                        'page' => $page,
+                        'size' => $size,
+                        'search' => $search
+                    ]
+                ]);
+                break;
             case 'getTransactionById':
                 $transactionId = $_GET['transaction_id'] ?? $_GET['id'] ?? '';
                 if ($transactionId) {

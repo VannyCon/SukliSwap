@@ -176,6 +176,32 @@ $middleware->requireAuth(function() {
                     ]
                 ]);
                 break;
+
+            case 'getAllOffers':
+                // Admin: Get all offers from all users
+                $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
+                $size = isset($_GET['size']) ? intval($_GET['size']) : 12;
+                $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+                $status = isset($_GET['status']) ? trim($_GET['status']) : '';
+                $coinTypeId = isset($_GET['coin_type_id']) ? trim($_GET['coin_type_id']) : '';
+                
+                $filters = [
+                    'status' => $status,
+                    'coin_type_id' => $coinTypeId,
+                    'search' => $search
+                ];
+                
+                $result = $offerService->getAllOffers($filters);
+                echo json_encode([
+                    'success' => true,
+                    'data' => $result['data'] ?? $result,
+                    'meta' => [
+                        'page' => $page,
+                        'size' => $size,
+                        'search' => $search
+                    ]
+                ]);
+                break;
         }
     } else {
         http_response_code(405);
