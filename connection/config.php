@@ -78,7 +78,7 @@ if ($currentDateTime >= $expireDateTime) {
     die("Access to this service is no longer available. Please contact the administrator.");
 }
 
-session_start();
+// session_start();
 
 // Load environment variables from .env file
 // try {
@@ -100,6 +100,7 @@ session_start();
 // }
 
 ?>
+
 
 
 
