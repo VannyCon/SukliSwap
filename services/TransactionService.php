@@ -1,7 +1,7 @@
 <?php
 
 require_once('../connection/connection.php');
-require_once('NotificationService.php');
+require_once('../services/NotificationService.php');
 
 class TransactionService extends config {
 
@@ -524,6 +524,42 @@ class TransactionService extends config {
             $result = $stmt->execute($params);
             
             if ($result) {
+                // Get transaction details to notify the other party
+                $transactionSql = "SELECT * FROM tbl_transactions WHERE id = ?";
+                $transactionStmt = $this->pdo->prepare($transactionSql);
+                $transactionStmt->execute([$transactionId]);
+                $transaction = $transactionStmt->fetch(PDO::FETCH_ASSOC);
+                
+                if ($transaction) {
+                    // Determine who to notify (the other party)
+                    $otherUserId = ($transaction['requestor_id'] == $userId) ? $transaction['offeror_id'] : $transaction['requestor_id'];
+                    
+                    // Create notification for status change
+                    $notificationService = new NotificationService();
+                    $notificationData = [
+                        'transaction_id' => $transactionId,
+                        'status' => $status,
+                        'updated_by' => $userId
+                    ];
+                    
+                    $statusMessages = [
+                        'scheduled' => 'Transaction has been scheduled',
+                        'in_progress' => 'Transaction is now in progress',
+                        'completed' => 'Transaction has been completed',
+                        'cancelled' => 'Transaction has been cancelled'
+                    ];
+                    
+                    $message = $statusMessages[$status] ?? "Transaction status has been updated to {$status}";
+                    
+                    $notificationService->createNotification(
+                        (int)$otherUserId,
+                        'transaction_status',
+                        'Transaction Status Update',
+                        $message,
+                        $notificationData
+                    );
+                }
+                
                 return [
                     'success' => true,
                     'message' => 'Transaction status updated successfully'

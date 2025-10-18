@@ -1,7 +1,7 @@
 <?php
 require_once('../connection/connection.php');
 require_once('../services/TransactionService.php');
-
+require_once('../services/NotificationService.php');
 class TrCoinRequestService extends config {
 
 	public function create($data, $userId) {
@@ -24,6 +24,22 @@ class TrCoinRequestService extends config {
 				$data['scheduled_time'] ?? null
 			]);
 
+			// Get the post request owner to send notification to
+			$ownerQuery = "SELECT user_id FROM tbl_coin_requests WHERE id = ?";
+			$ownerStmt = $this->pdo->prepare($ownerQuery);
+			$ownerStmt->execute([$data['post_request_id']]);
+			$owner = $ownerStmt->fetch(PDO::FETCH_ASSOC);
+			
+			if ($owner) {
+				$notificationService = new NotificationService();
+				$notificationService->createNotification(
+					(int)$owner['user_id'],
+					'tr_coin_request',
+					'New Coin Offer',
+					'Someone has offered to exchange coins.',
+					$data
+				);
+			}
 			return [
 				'success' => true,
 				'message' => 'Request sent successfully',
@@ -106,6 +122,16 @@ class TrCoinRequestService extends config {
 			$transactionService = new TransactionService();
 			$tx = $transactionService->createTRRequestTransaction($id, $row['post_request_id'], $ownerUserId, $scheduledMeetingTime);
 
+			// Notify the requestor that their request was accepted
+			$notificationService = new NotificationService();
+			$notificationService->createNotification(
+				(int)$row['requestor_id'],
+				'tr_coin_request_accepted',
+				'Coin Request Accepted',
+				'Your coin request has been accepted.',
+				['request_id' => $id, 'post_request_id' => $row['post_request_id']]
+			);
+
 			$this->pdo->commit();
 			return $tx;
 		} catch (Exception $e) {
@@ -116,13 +142,40 @@ class TrCoinRequestService extends config {
 
 	public function reject($id, $ownerUserId) {
 		try {
+			// First get the request details to notify the requestor
+			$getSql = "SELECT trr.* FROM tbl_tr_coin_request trr
+					   JOIN tbl_coin_requests cr ON trr.post_request_id = cr.id
+					   WHERE trr.id=? AND cr.user_id=? AND trr.status='pending'";
+			$getStmt = $this->pdo->prepare($getSql);
+			$getStmt->execute([$id, $ownerUserId]);
+			$request = $getStmt->fetch(PDO::FETCH_ASSOC);
+			
+			if (!$request) {
+				return [ 'success' => false, 'message' => 'Request not found or cannot be rejected' ];
+			}
+			
 			$sql = "UPDATE tbl_tr_coin_request trr
 					JOIN tbl_coin_requests cr ON trr.post_request_id = cr.id
 					SET trr.status='rejected', trr.updated_at=NOW()
 					WHERE trr.id=? AND cr.user_id=? AND trr.status='pending'";
 			$stmt = $this->pdo->prepare($sql);
 			$stmt->execute([$id, $ownerUserId]);
-			return [ 'success' => $stmt->rowCount() > 0, 'message' => $stmt->rowCount() ? 'Request rejected' : 'Request not found or cannot be rejected' ];
+			
+			if ($stmt->rowCount() > 0) {
+				// Notify the requestor that their request was rejected
+				$notificationService = new NotificationService();
+				$notificationService->createNotification(
+					(int)$request['requestor_id'],
+					'tr_coin_request_rejected',
+					'Coin Request Rejected',
+					'Your coin request has been rejected.',
+					['request_id' => $id, 'post_request_id' => $request['post_request_id']]
+				);
+				
+				return [ 'success' => true, 'message' => 'Request rejected' ];
+			} else {
+				return [ 'success' => false, 'message' => 'Request not found or cannot be rejected' ];
+			}
 		} catch (Exception $e) {
 			return [ 'success' => false, 'message' => 'Failed to reject request: ' . $e->getMessage() ];
 		}

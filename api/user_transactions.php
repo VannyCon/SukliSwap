@@ -252,13 +252,14 @@ $middleware->requireAuth(function() {
                 echo json_encode(['success' => false, 'message' => 'Invalid action']);
                 break;
         }
-    } else {
-        http_response_code(405);
-        echo json_encode([
-            'success' => false,
-            'message' => 'Method not allowed',
-            'allowed_methods' => ['POST']
-        ]);
-    }
+    } 
+    // else {
+    //     http_response_code(405);
+    //     echo json_encode([
+    //         'success' => false,
+    //         'message' => 'Method not allowed',
+    //         'allowed_methods' => ['POST']
+    //     ]);
+    // }
 });
 ?>
