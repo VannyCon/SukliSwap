@@ -8,7 +8,6 @@ $currentDateTime = time();
 if ($currentDateTime >= $expireDateTime) {
     die("Access to this service is no longer available. Please contact the administrator.");
 }
-session_start();
 //Database Config
 define("H", "mysql-d77de55-vannycon001-3b2f.c.aivencloud.com:25521");
 define("U", "avnadmin");
@@ -101,4 +100,5 @@ try {
 }
 
 ?>
+
 
