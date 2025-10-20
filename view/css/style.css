@@ -1,5 +1,5 @@
 .my-custom-text {
-    background: linear-gradient(135deg, rgb(255, 58, 107) 0%, rgb(253, 45, 45) 100%);
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -7,7 +7,7 @@
 }
 
 .my-custom-bg {
-    background: linear-gradient(135deg, rgb(255, 58, 107) 0%, rgb(253, 45, 45) 100%);
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
 }
 
 
@@ -257,7 +257,7 @@ h2 {
 }
 
 .search-btn {
-    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
     border: none;
     color: white;
     padding: 1rem 2rem;
@@ -267,7 +267,7 @@ h2 {
 }
 
 .search-btn:hover {
-    background: linear-gradient(135deg, #ee5a24, #ff6b6b);
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(238, 90, 36, 0.4);
 }

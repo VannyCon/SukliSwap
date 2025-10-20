@@ -84,7 +84,7 @@
 
                     <!-- Recent Activity -->
                     <div class="row">
-                        <div class="col-md-8">
+                        <!-- <div class="col-md-8">
                             <div class="card">
                                 <div class="card-header">
                                     <h5 class="card-title mb-0">Recent Activity</h5>
@@ -97,7 +97,7 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </div> -->
 
                         <div class="col-md-4">
                             <div class="card">

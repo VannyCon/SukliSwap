@@ -9,7 +9,7 @@
     <div class="container-fluid">
         <!-- Logo/Brand -->
         <a class="navbar-brand" href="../../index.php">
-            <i class="fas fa-hand-holding-usd" style="font-size: 24px; color: #0d6efd;"></i>
+            <i class="fas fa-hand-holding-usd" style="font-size: 24px; color:rgb(251, 252, 253);"></i>
             <span class="ms-2">Sukly Swap</span>
         </a>
 
@@ -30,18 +30,33 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="../../admin/cemetery/">
-                            <i class="fas fa-hand-holding-usd me-1"></i> Cemetery Map
+                        <a class="nav-link" href="../../admin/requests/">
+                            <i class="fas fa-hand-holding-usd me-1"></i> Coin Requests
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="../../admin/burials/">
-                            <i class="fas fa-cross me-1"></i> Burial Records
+                        <a class="nav-link" href="../../admin/offers/">
+                            <i class="fas fa-coins me-1"></i> Coin Offers
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="../../admin/staff_management/">
-                            <i class="fas fa-users me-1 mr-1"></i> Staff Management
+                        <a class="nav-link" href="../../admin/transactions/">
+                            <i class="fas fa-exchange-alt me-1"></i> Transactions
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="../../admin/safe_place/">
+                            <i class="fas fa-map-marker-alt me-1"></i> Safe Places
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="../../admin/user_management/">
+                            <i class="fas fa-users me-1"></i> User Management
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="../../admin/reports/">
+                            <i class="fas fa-flag me-1"></i> Reports
                         </a>
                     </li>
                     <li class="nav-item">
@@ -51,31 +66,41 @@
                     </li>
                 </div>
 
-                <!-- Staff mobile navigation -->
-                <div id="mobileStaffNav" style="display: none;">
+                <!-- User mobile navigation -->
+                <div id="mobileUserNav" style="display: none;">
                     <li class="nav-item">
-                        <a class="nav-link" href="../../staff/dashboard/">
+                        <a class="nav-link" href="../../user/dashboard/">
                             <i class="fas fa-home me-1"></i> Dashboard
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="../../staff/cemetery/">
-                            <i class="fas fa-coin me-1"></i> Cemetery Map
+                        <a class="nav-link" href="../../user/requests/">
+                            <i class="fas fa-hand-holding-usd me-1"></i> My Requests
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="../../staff/burials/">
-                            <i class="fas fa-search me-1"></i> Search Records
+                        <a class="nav-link" href="../../user/offers/">
+                            <i class="fas fa-coins me-1"></i> My Offers
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="../../staff/profile/">
+                        <a class="nav-link" href="../../user/transactions/">
+                            <i class="fas fa-exchange-alt me-1"></i> My Transactions
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="../../user/notifications/">
+                            <i class="fas fa-bell me-1"></i> Notifications
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="../../user/profile/">
                             <i class="fas fa-user me-1"></i> Profile
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="btn btn-danger" href="#" onclick="handleLogout()">
-                            <i class="fas fa-sign-out-alt me-2"></i>Logout
+                            <i class="fas fa-sign-out-alt me-2"></i> Logout
                         </a>
                     </li>
                 </div>
@@ -171,14 +196,14 @@ class MobileNavManager {
 
     showRoleBasedMobileNavigation(role) {
         const adminNav = document.getElementById('mobileAdminNav');
-        const staffNav = document.getElementById('mobileStaffNav');
+        const userNav = document.getElementById('mobileUserNav');
 
         if (role === 'admin') {
             if (adminNav) adminNav.style.display = 'block';
-            if (staffNav) staffNav.style.display = 'none';
-        } else if (role === 'staff') {
+            if (userNav) userNav.style.display = 'none';
+        } else if (role === 'user') {
             if (adminNav) adminNav.style.display = 'none';
-            if (staffNav) staffNav.style.display = 'block';
+            if (userNav) userNav.style.display = 'block';
         }
     }
 
@@ -188,7 +213,7 @@ class MobileNavManager {
             if (role === 'admin') {
                 homeLink.href = '../../admin/dashboard/';
             } else {
-                homeLink.href = '../../staff/dashboard/';
+                homeLink.href = '../../user/dashboard/';
             }
         }
     }
@@ -271,7 +296,7 @@ document.addEventListener('DOMContentLoaded', function() {
 /* Mobile Navbar Enhancements for Cemetery System */
 @media (max-width: 767.98px) {
     .mobile-nav-bg {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
