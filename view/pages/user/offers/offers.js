@@ -9,6 +9,7 @@ let headerAPI = null;
 let formHeaderAPI = null;
 class OffersManager {
     constructor() {
+        this.currentOffer = null;
         this.offers = [];
         this.coinTypes = [];
         const authManager = new AuthManager();
@@ -431,7 +432,7 @@ class OffersManager {
                         <td>
                             ${r.status === 'pending' ? `
                             <div class="btn-group btn-group-sm">
-                                <button class="btn btn-success" onclick="offersManager.acceptTargetedRequest(${r.id})">Accept</button>
+                                <button class="btn btn-success" onclick="offersManager.acceptTargetedRequest(${r.id}, ${r.offered_quantity})">Accept</button>
                                 <button class="btn btn-outline-danger" onclick="offersManager.rejectTargetedRequest(${r.id})">Reject</button>
                             </div>` : ''}
                         </td>
@@ -447,9 +448,11 @@ class OffersManager {
         }
     }
 
-    acceptTargetedRequest(id) {
+    acceptTargetedRequest(id, offeredQuantity) {
         // Set the request ID and show the meeting schedule modal
         document.getElementById('schedule_request_id').value = id;
+        document.getElementById('meeting_quantity').value = offeredQuantity;
+
         new bootstrap.Modal(document.getElementById('meetingScheduleModal')).show();
     }
 
@@ -464,7 +467,7 @@ class OffersManager {
         
         // Add the combined datetime to formData
         formData.set('scheduled_meeting_time', datetime);
-        
+        formData.set('quantity', formData.get('meeting_quantity'));
         // Debug logging
         console.log('Form data being sent:');
         for (let [key, value] of formData.entries()) {

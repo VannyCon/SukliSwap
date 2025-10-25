@@ -114,7 +114,7 @@ class TransactionService extends config {
     }
 
 
-    public function createTROfferTransaction($requestId, $offerId, $userId, $scheduledMeetingTime = null) {
+    public function createTROfferTransaction($requestId, $offerId, $userId, $scheduledMeetingTime = null, $quantity = null) {
         try {
 
             // Get the transaction request
@@ -162,7 +162,7 @@ class TransactionService extends config {
                 $request['offeror_id'],      // requestor_id: person who made the request
                 $offer['user_id'],           // offeror_id: person who made the offer
                 $offer['coin_type_id'],
-                $offer['quantity'],
+                $quantity,
                 $qrCode,
                 $offer['preferred_meeting_location'],
                 $offer['meeting_longitude'],
@@ -208,7 +208,7 @@ class TransactionService extends config {
         }
     }
 
-    public function createTRRequestTransaction($requestId, $offerId, $userId, $scheduledMeetingTime = null) {
+    public function createTRRequestTransaction($requestId, $offerId, $userId, $scheduledMeetingTime = null, $quantity = null) {
         try {
 
             // Get the transaction request
@@ -256,7 +256,7 @@ class TransactionService extends config {
                 $request['requestor_id'],      // requestor_id: person who made the request
                 $offer['user_id'],           // offeror_id: person who made the offer
                 $offer['coin_type_id'],
-                $offer['quantity'],
+                $quantity,
                 $qrCode,
                 $offer['preferred_meeting_location'],
                 $offer['meeting_longitude'],
@@ -319,7 +319,7 @@ class TransactionService extends config {
                     JOIN tbl_users o ON t.offeror_id = o.id
                     LEFT JOIN tbl_user_profiles rp ON t.requestor_id = rp.user_id
                     LEFT JOIN tbl_user_profiles op ON t.offeror_id = op.user_id
-                    WHERE (t.requestor_id = ? OR t.offeror_id = ?)";
+                    WHERE (t.requestor_id = ? OR t.offeror_id = ?) AND t.is_active = 1";
             
             $params = [$userId, $userId];
             
@@ -645,6 +645,16 @@ class TransactionService extends config {
                     'message' => 'Invalid QR or access denied'
                 ];
             }
+            if ($transaction['quantity']) {
+                // This update the post offer or request quantity
+                if($transaction['isOffer'] == 1) {
+                    $update = $this->pdo->prepare("UPDATE tbl_coin_offers SET quantity = quantity - ? WHERE id = ?");
+                    $update->execute([$transaction['quantity'], $transaction['coin_offers_id']]);
+                } else {
+                    $update = $this->pdo->prepare("UPDATE tbl_coin_requests SET quantity = quantity - ? WHERE id = ?");
+                    $update->execute([$transaction['quantity'], $transaction['coin_requests_id']]);
+                }
+            }
 
             // If scheduled, mark in_progress and set actual_meeting_time
             if ($transaction['status'] === 'scheduled') {
@@ -795,5 +805,34 @@ class TransactionService extends config {
             ];
         }
     }
+    public function softDeleteTransaction($transactionId) {
+        try {
+            $this->pdo->beginTransaction();
+
+            // Update transaction
+            $sql = "UPDATE tbl_transactions SET 
+                    is_active = 0, 
+                    updated_at = NOW() 
+                    WHERE id = ?";
+            
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([$transactionId]);
+
+            $this->pdo->commit();
+
+            return [
+                'success' => true,
+                'message' => 'Transaction soft deleted successfully'
+            ];
+
+        } catch (Exception $e) {
+            $this->pdo->rollback();
+            return [
+                'success' => false,
+                'message' => 'Error soft deleting transaction: ' . $e->getMessage()
+            ];
+        }
+    }
+
 }
 ?>

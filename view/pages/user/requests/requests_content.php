@@ -71,6 +71,7 @@
                         <label for="meeting_time" class="form-label">Meeting Time</label>
                         <input type="time" class="form-control" id="meeting_time" name="meeting_time" required>
                     </div>
+                    <input type="hidden" class="form-control" id="meeting_quantity" name="meeting_quantity" required>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

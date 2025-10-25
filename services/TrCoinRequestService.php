@@ -77,7 +77,7 @@ class TrCoinRequestService extends config {
 		}
 	}
 
-	public function accept($id, $ownerUserId, $scheduledMeetingTime = null) {
+	public function accept($id, $ownerUserId, $scheduledMeetingTime = null, $quantity = null) {
 		try {
 			$this->pdo->beginTransaction();
 
@@ -120,7 +120,7 @@ class TrCoinRequestService extends config {
 
 			// Create transaction using existing method with scheduled meeting time
 			$transactionService = new TransactionService();
-			$tx = $transactionService->createTRRequestTransaction($id, $row['post_request_id'], $ownerUserId, $scheduledMeetingTime);
+			$tx = $transactionService->createTRRequestTransaction($id, $row['post_request_id'], $ownerUserId, $scheduledMeetingTime, $quantity);
 
 			// Notify the requestor that their request was accepted
 			$notificationService = new NotificationService();

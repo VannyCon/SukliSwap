@@ -81,6 +81,7 @@ class CoinExchangeManager {
                 this.handleCompleteTransaction(e.target.dataset.qrCode);
             }
             if (e.target.classList.contains('send-offer-btn')) {
+                console.log("e.target.dataset send-offer-btn", e.target.dataset);
                 e.preventDefault();
                 const currentModal = e.target.closest('.modal');
                 if (currentModal) {
@@ -90,18 +91,20 @@ class CoinExchangeManager {
                 setTimeout(() => {
                     // Clean any stale backdrops
                     document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
-                    this.openSendOfferModal(e.target.dataset.postOfferId, e.target.dataset.coinTypeId);
+                    this.openSendOfferModal(e.target.dataset.postOfferId, e.target.dataset.coinTypeId, e.target.dataset.quantity);
                 }, 150);
             }
             if (e.target.classList.contains('send-request-btn')) {
                 e.preventDefault();
                 const currentModal = e.target.closest('.modal');
+                console.log("e.target.dataset send-request-btn", e.target.dataset);
                 if (currentModal) {
                     try { bootstrap.Modal.getInstance(currentModal)?.hide(); } catch (_) {}
                 }
+
                 setTimeout(() => {
                     document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
-                    this.openSendRequestModal(e.target.dataset.postRequestId, e.target.dataset.coinTypeId);
+                    this.openSendRequestModal(e.target.dataset.postRequestId, e.target.dataset.coinTypeId, e.target.dataset.quantity);
                 }, 150);
             }
         });
@@ -325,11 +328,32 @@ class CoinExchangeManager {
     }
 
     // ===== Targeted interactions (send offer/request) =====
-    openSendOfferModal(postOfferId, coinTypeId) {
+    openSendOfferModal(postOfferId, coinTypeId, quantity) {
         const coinTypeEl = document.getElementById('tro_coin_type_id');
         const latEl = document.getElementById('tro_my_latitude');
         const lngEl = document.getElementById('tro_my_longitude');
         const postOfferIdEl = document.getElementById('tro_post_request_id');
+        const quantityEl = document.getElementById('tro_requested_quantity');
+        const counterEl = document.getElementById('tro_quantity_counter');
+        if (quantityEl) {
+            quantityEl.max = quantity || 10000;
+            quantityEl.value = '';
+            quantityEl.addEventListener('input', (e) => {
+                const value = parseInt(e.target.value) || 0;
+                const max = parseInt(e.target.max) || 10000;
+                
+                // Enforce max value - prevent typing beyond max
+                if (value > max) {
+                    e.target.value = max;
+                    if (CustomToast) CustomToast.show('warning', `Maximum quantity is ${max}`);
+                }
+                
+                if (counterEl) {
+                    counterEl.textContent = `${e.target.value || 0}/${max}`;
+                }
+            });
+        }
+        if (counterEl) counterEl.textContent = `0/${quantity || 10000}`;
         if (coinTypeEl) coinTypeEl.value = coinTypeId || '';
         if (postOfferIdEl) postOfferIdEl.value = postOfferId;
         if (navigator.geolocation && latEl && lngEl) {
@@ -345,11 +369,33 @@ class CoinExchangeManager {
         if (modalEl) new bootstrap.Modal(modalEl).show();
     }
 
-    openSendRequestModal(postRequestId, coinTypeId) {
+    openSendRequestModal(postRequestId, coinTypeId, quantity) {
         const coinTypeEl = document.getElementById('trr_coin_type_id');
         const latEl = document.getElementById('trr_my_latitude');
         const lngEl = document.getElementById('trr_my_longitude');
         const postRequestIdEl = document.getElementById('trr_post_offer_id');
+        const quantityEl = document.getElementById('trr_offered_quantity');
+        const counterEl = document.getElementById('trr_quantity_counter');
+        if (quantityEl) {
+            quantityEl.max = quantity || 10000;
+            quantityEl.setAttribute('max', quantity || 10000);
+            quantityEl.value = '';
+            quantityEl.addEventListener('input', (e) => {
+                const value = parseInt(e.target.value) || 0;
+                const max = parseInt(e.target.max) || 10000;
+                
+                // Enforce max value - prevent typing beyond max
+                if (value > max) {
+                    e.target.value = max;
+                    if (CustomToast) CustomToast.show('warning', `Maximum quantity is ${max}`);
+                }
+                
+                if (counterEl) {
+                    counterEl.textContent = `${e.target.value || 0}/${max}`;
+                }
+            });
+        }
+        if (counterEl) counterEl.textContent = `0/${quantity || 10000}`;
         if (coinTypeEl) coinTypeEl.value = coinTypeId || '';
         if (postRequestIdEl) postRequestIdEl.value = postRequestId;
         if (navigator.geolocation && latEl && lngEl) {
@@ -1015,14 +1061,13 @@ class CoinExchangeManager {
                     <div><strong>Location:</strong> ${request.preferred_meeting_location || 'Not specified'}</div>
                     ${request.notes ? `<div class="mt-2"><strong>Notes:</strong><br>${request.notes}</div>` : ''}
                     ${request.meeting_latitude && request.meeting_longitude ?
-                        `<div class=\"mt-2\"><strong>Coordinates:</strong> ${request.meeting_latitude}, ${request.meeting_longitude}</div>
-                         <div id=\"request-map-${request.id}\" style=\"height: 240px; border-radius: 8px; overflow: hidden; margin-top: 8px;\"></div>` : ''}
+                    `<div id=\"request-map-${request.id}\" style=\"height: 240px; border-radius: 8px; overflow: hidden; margin-top: 8px;\"></div>` : ''}
                     <div class="text-muted mt-2">${this.formatDate(request.created_at)}</div>
                 </div>
             `;
 
             const footerHtml = `
-                <button type="button" class="btn btn-success send-offer-btn" data-post-offer-id="${request.id}" data-coin-type-id="${request.coin_type_id}">Send Offer</button>
+                <button type="button" class="btn btn-success send-offer-btn" data-quantity="${request.quantity}" data-post-offer-id="${request.id}" data-coin-type-id="${request.coin_type_id}">Send Offer</button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             `;
 
@@ -1075,14 +1120,13 @@ class CoinExchangeManager {
                     <div><strong>Location:</strong> ${offer.preferred_meeting_location || 'Not specified'}</div>
                     ${offer.notes ? `<div class="mt-2"><strong>Notes:</strong><br>${offer.notes}</div>` : ''}
                     ${offer.meeting_latitude && offer.meeting_longitude ?
-                        `<div class=\"mt-2\"><strong>Coordinates:</strong> ${offer.meeting_latitude}, ${offer.meeting_longitude}</div>
-                         <div id=\"offer-map-${offer.id}\" style=\"height: 240px; border-radius: 8px; overflow: hidden; margin-top: 8px;\"></div>` : ''}
+                    `<div id=\"offer-map-${offer.id}\" style=\"height: 240px; border-radius: 8px; overflow: hidden; margin-top: 8px;\"></div>` : ''}
                     <div class="text-muted mt-2">${this.formatDate(offer.created_at)}</div>
                 </div>
             `;
 
             const footerHtml = `
-                <button type="button" class="btn btn-success send-request-btn" data-post-request-id="${offer.id}" data-coin-type-id="${offer.coin_type_id}">Send Request</button>
+                <button type="button" class="btn btn-success send-request-btn" data-quantity="${offer.quantity}" data-post-request-id="${offer.id}" data-coin-type-id="${offer.coin_type_id}">Send Request</button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             `;
 

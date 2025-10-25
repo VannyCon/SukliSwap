@@ -159,7 +159,21 @@ $middleware->requireAuth(function() {
                     ]);
                 }
                 break;
-                
+
+            case 'softDeleteTransaction':
+                $transactionId = $_POST['transaction_id'] ?? '';
+                if ($transactionId) {
+                    $result = $transactionService->softDeleteTransaction($transactionId);
+                    echo json_encode($result);
+                } else {
+                    http_response_code(400);
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'Transaction ID is required'
+                    ]);
+                }
+                break;
+
             default:
                 http_response_code(400);
                 echo json_encode([

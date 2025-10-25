@@ -430,7 +430,7 @@ class RequestsManager {
                         <td>
                             ${o.status === 'pending' ? `
                             <div class="btn-group btn-group-sm">
-                                <button class="btn btn-success" onclick="requestsManager.acceptTargetedOffer(${o.id})">Accept</button>
+                                <button class="btn btn-success" onclick="requestsManager.acceptTargetedOffer(${o.id}, ${o.requested_quantity})">Accept</button>
                                 <button class="btn btn-outline-danger" onclick="requestsManager.rejectTargetedOffer(${o.id})">Reject</button>
                             </div>` : ''}
                         </td>
@@ -446,9 +446,10 @@ class RequestsManager {
         }
     }
 
-    acceptTargetedOffer(id) {
+    acceptTargetedOffer(id, requestedQuantity) {
         // Set the request ID and show the meeting schedule modal
         document.getElementById('schedule_request_id').value = id;
+        document.getElementById('meeting_quantity').value = requestedQuantity;
         new bootstrap.Modal(document.getElementById('meetingScheduleModal')).show();
     }
 
@@ -463,7 +464,7 @@ class RequestsManager {
         
         // Add the combined datetime to formData
         formData.set('scheduled_meeting_time', datetime);
-        
+        formData.set('meeting_quantity', formData.get('meeting_quantity'));
         // Debug logging
         console.log('Form data being sent:');
         for (let [key, value] of formData.entries()) {

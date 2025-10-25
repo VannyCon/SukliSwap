@@ -31,7 +31,6 @@
         <div class="user-details ms-3 flex-grow-1">
             <div class="user-name d-flex align-items-center">
                 <span id="userName" class="fw-bold me-2">Loading...</span>
-                
             </div>
             <div class="user-badges">
                 <span id="verificationBadge" class="badge bg-success text-white me-1" style="display:none;">
@@ -280,9 +279,7 @@ class SidebarManager {
             const userData = localStorage.getItem('user_data');
             if (userData) {
                 const user = JSON.parse(userData);
-                
                 this.updateUserInfo(user);
-                console.log('User data fallback:', user.role);
                 // Show appropriate navigation based on role
                 this.showRoleBasedNavigation(user.role);
                 this.setupEventListeners();
@@ -302,7 +299,7 @@ class SidebarManager {
             // Update username display
             const userNameElement = document.getElementById('userName');
             if (userNameElement) {
-                userNameElement.textContent = user.username || user.first_name || 'User';
+                userNameElement.textContent = user.full_name || 'User';
                 localStorage.setItem('user_id', user.id);
             }
 

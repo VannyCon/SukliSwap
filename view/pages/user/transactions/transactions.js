@@ -47,6 +47,32 @@ class TransactionsManager {
             confirmBtn.disabled = e.target.value !== 'DELETE';
         });
     }
+    async softDeleteTransaction(transactionId) {
+        try {
+            if (window.confirmActions && window.confirmActions.delete) {
+                window.confirmActions.delete('Transaction #' + transactionId, async () => {
+                    const formData = new FormData();
+                    formData.append('action', 'softDeleteTransaction');
+                    formData.append('transaction_id', transactionId);
+                    const response = await axios.post(`${userTransactionsAPI}?action=softDeleteTransaction`, 
+                        formData,
+                        { headers: formHeaderAPI }
+                    );
+                    const result = response.data;
+                    if (result.success) {
+                        CustomToast.show('success', 'Transaction soft deleted successfully');
+                        this.loadTransactions();
+                    } else {
+                        CustomToast.show('error', result.message || 'Failed to soft delete transaction');
+                    }
+                });
+            }
+          
+        } catch (error) {
+            console.error('Error soft deleting transaction:', error);
+            CustomToast.show('error', 'Failed to soft delete transaction');
+        }
+    }
 
     async loadTransactions() {
         try {
@@ -125,6 +151,11 @@ class TransactionsManager {
                                 </button>
                                 ${this.getActionButtons(transaction)}
                             </div>
+                            ${transaction.status != 'scheduled' ? `
+                            <button class="btn btn-outline-danger btn-sm" onclick="transactionsManager.softDeleteTransaction(${transaction.id})">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                            ` : ''}
                         </div>
                     </div>
                 </div>
@@ -271,9 +302,7 @@ class TransactionsManager {
                 <div class="col-md-6">
                     <h6>Participants</h6>
                     <p><strong>Requestor:</strong> ${transaction.requestor_first_name} ${transaction.requestor_last_name}</p>
-                    <p><strong>Requestor Username:</strong> @${transaction.requestor_username}</p>
                     <p><strong>Offeror:</strong> ${transaction.offeror_first_name} ${transaction.offeror_last_name}</p>
-                    <p><strong>Offeror Username:</strong> @${transaction.offeror_username}</p>
                 </div>
             </div>
             <hr>

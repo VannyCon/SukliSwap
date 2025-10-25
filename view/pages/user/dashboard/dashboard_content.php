@@ -27,7 +27,8 @@
                     <input type="hidden" id="tro_post_request_id" name="post_request_id">
                     <div class="mb-3">
                         <label for="tro_requested_quantity" class="form-label">Quantity</label>
-                        <input type="number" class="form-control" id="tro_requested_quantity" name="requested_quantity" min="1" required>
+                        <input type="number" class="form-control" id="tro_requested_quantity" name="requested_quantity" min="1" max="0" required>
+                        <small class="text-muted" id="tro_quantity_counter">0/0</small>
                     </div>
                     <div class="mb-3">
                         <label for="tro_message" class="form-label">Message (optional)</label>
@@ -64,7 +65,8 @@
                     <input type="hidden" id="trr_post_offer_id" name="post_offer_id">
                     <div class="mb-3">
                         <label for="trr_offered_quantity" class="form-label">Quantity</label>
-                        <input type="number" class="form-control" id="trr_offered_quantity" name="offered_quantity" min="1" required>
+                        <input type="number" class="form-control" id="trr_offered_quantity" name="offered_quantity" min="1" max="0" required>
+                        <small class="text-muted" id="trr_quantity_counter">0/0</small>
                     </div>
                     <div class="mb-3">
                         <label for="trr_message" class="form-label">Message (optional)</label>

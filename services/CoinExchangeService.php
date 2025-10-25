@@ -127,7 +127,7 @@ class CoinExchangeService extends config {
                 $whereClauses[] = "cr.user_id != :user_id";
                 $params[':user_id'] = $userId;
             }
-            
+            $whereClauses[] = "cr.quantity > 0";
             $whereSql = count($whereClauses) ? ('WHERE ' . implode(' AND ', $whereClauses)) : '';
 
             $query = "SELECT cr.*, u.username, u.first_name, u.last_name, u.email,
@@ -396,7 +396,7 @@ class CoinExchangeService extends config {
                 $whereClauses[] = "co.user_id != :user_id";
                 $params[':user_id'] = $userId;
             }
-            
+            $whereClauses[] = "co.quantity > 0";
             $whereSql = count($whereClauses) ? ('WHERE ' . implode(' AND ', $whereClauses)) : '';
 
             $query = "SELECT co.*, u.username, u.first_name, u.last_name, u.email,
