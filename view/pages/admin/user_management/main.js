@@ -185,14 +185,12 @@ class UserManagementManager {
                                 <i class="fas fa-times-circle"></i>
                             </button>` : ''
                         }
-                        ${user.is_active == '1' ? 
-                            `<button class="btn btn-sm btn-outline-warning" onclick="userManager.updateUserStatus(${user.id}, 'deactivate')" title="Deactivate User">
-                                <i class="fas fa-user-slash"></i>
-                            </button>` :
-                            `<button class="btn btn-sm btn-outline-success" onclick="userManager.updateUserStatus(${user.id}, 'activate')" title="Activate User">
-                                <i class="fas fa-user-check"></i>
-                            </button>`
+                        ${user.is_verified == '1' ? 
+                            ` <button class="btn btn-sm btn-outline-danger" onclick="userManager.declineUser(${user.id})" title="Block User">
+                                <i class="fas fa-user-times"></i>
+                            </button>` : ''
                         }
+                 
                         <button class="btn btn-sm btn-outline-danger" onclick="userManager.deleteUser(${user.id})" title="Delete User">
                             <i class="fas fa-trash"></i>
                         </button>
@@ -201,7 +199,14 @@ class UserManagementManager {
             </tr>
         `).join('');
     }
-
+    // ${user.is_active == '1' ? 
+    //     `<button class="btn btn-sm btn-outline-warning" onclick="userManager.updateUserStatus(${user.id}, 'deactivate')" title="Deactivate User">
+    //         <i class="fas fa-user-slash"></i>
+    //     </button>` :
+    //     `<button class="btn btn-sm btn-outline-success" onclick="userManager.updateUserStatus(${user.id}, 'activate')" title="Activate User">
+    //         <i class="fas fa-user-check"></i>
+    //     </button>`
+    // }
     renderPagination() {
         const container = document.getElementById('paginationContainer');
         

@@ -248,6 +248,21 @@ class AuthManager {
             return data;
         }
         
+        // Check if user is verified (is_verified = 2 means not verified)
+        if (data.data?.user && (data.data.user.is_verified == 2 || data.data.user.is_verified === "2")) {
+            console.log('User verification check triggered - logging out');
+            this.clearAuth();
+            // alert('Your account verification is required. Please verify your account to continue.');
+               // Use modern confirmation modal
+            if (window.confirmActions && window.confirmActions.declineUser) {
+                window.confirmActions.declineUser(async () => {
+                    window.location.href = `${this.baseURL}/view/pages/auth/login.php`;
+                });
+            }
+            window.location.href = `${this.baseURL}/view/pages/auth/login.php`;
+            return data;
+        }
+        
         return data;
     }
 

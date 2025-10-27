@@ -334,6 +334,17 @@ const confirmActions = {
         });
     },
 
+    declineUser: (onConfirm) => {
+        modernConfirm({
+            message: 'You Account has been declined',
+            title: 'Decline User Confirmation',
+            type: 'warning',
+            confirmText: 'Okay',
+            showCancel: false,
+            onConfirm: onConfirm
+        });
+    },
+
     // Delete confirmation
     delete: (itemName = 'item', onConfirm) => {
         modernConfirm({
