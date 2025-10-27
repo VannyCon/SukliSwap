@@ -2,3 +2,4 @@ data/tiles/
 .env
 database
 connection/
+vendor/

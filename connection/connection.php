@@ -130,6 +130,37 @@ class config {
     }
 }
 
+/**
+ * Get a database connection instance
+ * @return config Database connection object
+ */
+function getConnection() {
+    static $connection = null;
+    if ($connection === null) {
+        $connection = new config();
+    }
+    return $connection;
+}
 
+/**
+ * Get a PDO connection for direct database queries
+ * @return PDO PDO connection object
+ */
+function getPDOConnection() {
+    static $pdo = null;
+    if ($pdo === null) {
+        require_once(__DIR__ . '/config.php');
+        $dsn = "mysql:host=" . H . ";dbname=" . DB;
+        $username = U;
+        $password = P;
+        try {
+            $pdo = new PDO($dsn, $username, $password);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        } catch (PDOException $e) {
+            die("Connection failed: " . $e->getMessage());
+        }
+    }
+    return $pdo;
+}
 
 ?>

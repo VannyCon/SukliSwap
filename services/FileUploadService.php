@@ -289,5 +289,82 @@ class FileUploadService {
             'image_info' => $imageInfo
         ];
     }
+
+    /**
+     * Upload message attachment
+     * @param array $file $_FILES array element
+     * @param int $transactionId Transaction ID for organizing files
+     * @return array Response array with success status and file info
+     */
+    public function uploadMessageAttachment($file, $transactionId) {
+        try {
+            // Check if file was uploaded
+            if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
+                return [
+                    'success' => false,
+                    'message' => 'No file uploaded or upload error occurred'
+                ];
+            }
+
+            // Validate file type
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mimeType = finfo_file($finfo, $file['tmp_name']);
+            finfo_close($finfo);
+
+            if (!in_array($mimeType, $this->allowedTypes)) {
+                return [
+                    'success' => false,
+                    'message' => 'Invalid file type. Only JPEG, PNG, and GIF images are allowed.'
+                ];
+            }
+
+            // Validate file size
+            if ($file['size'] > $this->maxFileSize) {
+                return [
+                    'success' => false,
+                    'message' => 'File size exceeds 5MB limit'
+                ];
+            }
+
+            // Create upload directory structure: messages/transactionId/
+            $fullUploadDir = $this->uploadDir . 'messages/transaction_' . $transactionId . '/';
+            if (!is_dir($fullUploadDir)) {
+                if (!mkdir($fullUploadDir, 0755, true)) {
+                    return [
+                        'success' => false,
+                        'message' => 'Failed to create upload directory'
+                    ];
+                }
+            }
+
+            // Generate unique filename
+            $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $filename = uniqid() . '_' . time() . '.' . $extension;
+            $filePath = $fullUploadDir . $filename;
+
+            // Move uploaded file
+            if (move_uploaded_file($file['tmp_name'], $filePath)) {
+                return [
+                    'success' => true,
+                    'message' => 'File uploaded successfully',
+                    'file_path' => $filePath,
+                    'original_name' => $file['name'],
+                    'file_size' => $file['size']
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'message' => 'Failed to move uploaded file'
+                ];
+            }
+
+        } catch (Exception $e) {
+            error_log("Message attachment upload error: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'File upload failed: ' . $e->getMessage()
+            ];
+        }
+    }
 }
 ?>

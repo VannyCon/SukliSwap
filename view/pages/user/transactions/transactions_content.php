@@ -332,6 +332,58 @@
     </div>
 </div>
 
+<!-- Messaging Modal -->
+<div class="modal fade" id="messagingModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-comments"></i> Direct Message
+                    <span id="connectionStatus" class="badge bg-secondary ms-2" style="font-size: 0.7em;">
+                        <i class="fas fa-circle"></i> Connecting...
+                    </span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="d-flex flex-column h-100">
+                    <!-- Messages Container -->
+                    <div id="messagesContainer" class="flex-grow-1 p-3" style="height: 400px; overflow-y: auto; background-color: #f8f9fa;">
+                        <!-- Messages will be loaded here -->
+                    </div>
+                    
+                    <!-- Message Input Area -->
+                    <div class="border-top p-3">
+                        <form id="messageForm" class="d-flex align-items-end">
+                            <div class="flex-grow-1 me-2">
+                                <div class="position-relative">
+                                    <textarea id="messageInput" class="form-control" rows="2" placeholder="Type your message..." style="resize: none;"></textarea>
+                                    <div id="attachmentPreview" class="mt-2 d-none"></div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <div class="btn-group btn-group-sm">
+                                        <input type="file" id="messageAttachment" accept="image/*" class="d-none">
+                                        <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('messageAttachment').click()">
+                                            <i class="fas fa-paperclip"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary" id="emojiPicker">
+                                            <i class="fas fa-smile"></i>
+                                        </button>
+                                        <div id="emojiPickerDropdown" class="position-absolute bg-white border rounded p-2 shadow" style="z-index: 1000; max-height: 200px; overflow-y: auto; display: none;"></div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-paper-plane"></i> Send
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- External libs for QR (loaded only on this page) -->
 <script src="https://unpkg.com/html5-qrcode" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
@@ -358,5 +410,126 @@
 .rating label:hover ~ label,
 .rating input:checked ~ label {
     color: #ffc107;
+}
+
+/* Messaging Styles */
+.message-item {
+    margin-bottom: 15px;
+    display: flex;
+}
+
+.message-own {
+    justify-content: flex-end;
+}
+
+.message-other {
+    justify-content: flex-start;
+}
+
+.message-content {
+    max-width: 70%;
+    padding: 10px 15px;
+    border-radius: 18px;
+    position: relative;
+}
+
+.message-own .message-content {
+    background-color: #007bff;
+    color: white;
+    border-bottom-right-radius: 5px;
+}
+
+.message-other .message-content {
+    background-color: #e9ecef;
+    color: #333;
+    border-bottom-left-radius: 5px;
+}
+
+.message-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 5px;
+}
+
+.message-own .message-meta {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.message-other .message-meta {
+    color: #6c757d;
+}
+
+.message-actions {
+    margin-left: 10px;
+}
+
+.message-actions .btn {
+    padding: 2px 6px;
+    font-size: 0.75rem;
+}
+
+.message-image img {
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.message-image img:hover {
+    transform: scale(1.05);
+}
+
+.typing-indicator {
+    padding: 10px 15px;
+    color: #6c757d;
+    font-style: italic;
+}
+
+.typing-indicator i {
+    color: #007bff;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.attachment-preview {
+    text-align: center;
+}
+
+#emojiPickerDropdown {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    width: 300px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+#emojiPickerDropdown.show {
+    display: block !important;
+}
+
+/* Scrollbar styling for messages container */
+#messagesContainer::-webkit-scrollbar {
+    width: 6px;
+}
+
+#messagesContainer::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+#messagesContainer::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+#messagesContainer::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
 }
 </style>

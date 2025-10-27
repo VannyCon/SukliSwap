@@ -166,6 +166,15 @@ class TransactionsManager {
     getActionButtons(transaction) {
         const buttons = [];
         
+        // Add messaging button for active transactions
+        if (['scheduled', 'in_progress'].includes(transaction.status)) {
+            buttons.push(`
+                <button class="btn btn-outline-primary btn-sm" onclick="transactionsManager.openMessaging(${transaction.id}, ${transaction.requestor_id}, ${transaction.offeror_id})">
+                    <i class="fas fa-comments"></i> Message
+                </button>
+            `);
+        }
+        
         switch (transaction.status) {
             case 'scheduled':
                 buttons.push(`
@@ -192,16 +201,6 @@ class TransactionsManager {
                 break;
         }
 
-        // if (['scheduled', 'in_progress'].includes(transaction.status)) {
-        //     buttons.push(`
-        //         <button class="btn btn-outline-danger btn-sm" onclick="transactionsManager.cancelTransaction(${transaction.id})">
-        //             <i class="fas fa-times"></i> Cancel
-        //         </button>
-        //         <button class="btn btn-outline-warning btn-sm" onclick="transactionsManager.reportDisputeModal(${transaction.id})">
-        //             <i class="fas fa-exclamation-triangle"></i> Dispute
-        //         </button>
-        //     `);
-        // }
         if (['scheduled', 'in_progress'].includes(transaction.status)) {
             buttons.push(`
                 <button class="btn btn-outline-danger btn-sm" onclick="transactionsManager.cancelTransaction(${transaction.id})">
@@ -539,6 +538,38 @@ class TransactionsManager {
         document.getElementById('searchTransactions').value = '';
         
         this.loadTransactions();
+    }
+
+    // Messaging functionality
+    openMessaging(transactionId, requestorId, offerorId) {
+        // Determine receiver ID
+        const receiverId = (parseInt(requestorId) === parseInt(this.currentUserId)) ? offerorId : requestorId;
+        
+        // Check if MessagingManager class is available
+        if (typeof MessagingManager === 'undefined') {
+            CustomToast.show('error', 'Messaging system is not loaded. Please refresh the page.');
+            console.error('MessagingManager class not found. Make sure messaging.js is loaded.');
+            return;
+        }
+        
+        // Initialize messaging manager if not exists
+        if (!window.messagingManager) {
+            try {
+                window.messagingManager = new MessagingManager();
+            } catch (error) {
+                console.error('Failed to initialize MessagingManager:', error);
+                CustomToast.show('error', 'Failed to initialize messaging system. Please refresh the page.');
+                return;
+            }
+        }
+        
+        // Open messaging modal
+        try {
+            window.messagingManager.openMessagingModal(transactionId, receiverId);
+        } catch (error) {
+            console.error('Failed to open messaging modal:', error);
+            CustomToast.show('error', 'Failed to open messaging. Please try again.');
+        }
     }
 
 }
