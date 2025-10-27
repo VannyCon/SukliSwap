@@ -18,13 +18,17 @@ class LoginServices {
             // Hash the password
             $hashedPassword = password_hash($userData['password'], PASSWORD_DEFAULT);
 
-            $query = "INSERT INTO tbl_users (username, email, password_hash, role, is_verified, is_active) VALUES (?, ?, ?, ?, ?, ?)";
+            $query = "INSERT INTO tbl_users (username, email, password_hash, role, first_name, last_name, phone, valid_id, is_verified, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt = $this->pdo->prepare($query);
             $stmt->execute([
                 $userData['username'],
                 $userData['email'],
                 $hashedPassword,
                 $userData['role'] ?? 'user',
+                $userData['first_name'] ?? null,
+                $userData['last_name'] ?? null,
+                $userData['phone'] ?? null,
+                $userData['valid_id'] ?? null,
                 0, // is_verified = 0 (pending verification)
                 1  // is_active = 1 (active by default)
             ]);
@@ -301,6 +305,43 @@ class LoginServices {
             return $stmt->fetch() !== false;
         } catch (PDOException $e) {
             error_log("Username exists check error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Update user's valid_id field
+     * @param int $userId User ID
+     * @param string $validId Comma-separated file paths
+     * @return bool True on success, false on failure
+     */
+    public function updateUserValidId($userId, $validId) {
+        try {
+            $query = "UPDATE tbl_users SET valid_id = ? WHERE id = ?";
+            $stmt = $this->pdo->prepare($query);
+            $stmt->execute([$validId, $userId]);
+            
+            return $stmt->rowCount() > 0;
+        } catch (PDOException $e) {
+            error_log("Update user valid_id error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Delete user
+     * @param int $userId User ID
+     * @return bool True on success, false on failure
+     */
+    public function deleteUser($userId) {
+        try {
+            $query = "DELETE FROM tbl_users WHERE id = ?";
+            $stmt = $this->pdo->prepare($query);
+            $stmt->execute([$userId]);
+            
+            return $stmt->rowCount() > 0;
+        } catch (PDOException $e) {
+            error_log("Delete user error: " . $e->getMessage());
             return false;
         }
     }

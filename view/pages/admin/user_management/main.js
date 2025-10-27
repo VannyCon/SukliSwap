@@ -3,6 +3,7 @@
  * Handles user management functionality including user verification, filtering, and bulk operations
  */
 let adminAPI = null;
+let validIdAPI = null;
 let headerAPI = null;
 let formHeaderAPI = null;
 let currentUser = null;
@@ -12,6 +13,7 @@ class UserManagementManager {
         const authManager = new AuthManager();
         this.authManager = authManager;
         adminAPI = authManager.API_CONFIG.baseURL + 'admin.php';
+        validIdAPI = authManager.API_CONFIG.baseURL + 'get_user_valid_ids.php';
         headerAPI = authManager.API_CONFIG.getHeaders();
         formHeaderAPI = authManager.API_CONFIG.getFormHeaders();
         this.currentUser = authManager.getUser();
@@ -455,8 +457,22 @@ class UserManagementManager {
         }
     }
 
-    renderUserDetailsModal(user) {
+    async renderUserDetailsModal(user) {
         const modalContent = document.getElementById('userDetailsContent');
+        
+        // Load valid ID images
+        let validIdImages = `
+            <div class="mt-4">
+                <h6 class="mb-3"><i class="fas fa-id-card me-2"></i>Valid ID Documents</h6>
+                <div class="text-center py-3">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading valid ID documents...</span>
+                    </div>
+                    <p class="mt-2 mb-0 text-muted">Loading valid ID documents...</p>
+                </div>
+            </div>
+        `;
+        
         modalContent.innerHTML = `
             <div class="row">
                 <div class="col-md-4 text-center">
@@ -478,11 +494,82 @@ class UserManagementManager {
                         <tr><td><strong>Last Updated:</strong></td><td>${this.formatDate(user.updated_at)}</td></tr>
                     </table>
                 </div>
-</div>
+            </div>
+            ${validIdImages}
         `;
 
         const modal = new bootstrap.Modal(document.getElementById('userDetailsModal'));
         modal.show();
+
+        // Load valid ID images asynchronously
+        if (user.valid_id) {
+            try {
+                const validIdResponse = await axios.get(`${validIdAPI}?user_id=${user.id}`);
+                console.log("validIdResponse", validIdResponse.data);
+                if (validIdResponse.data.success && validIdResponse.data.data.valid_ids.length > 0) {
+                    const images = validIdResponse.data.data.valid_ids;
+                    validIdImages = `
+                        <div class="mt-4">
+                            <h6 class="mb-3"><i class="fas fa-id-card me-2"></i>Valid ID Documents (${images.length})</h6>
+                            <div class="row g-2">
+                                ${images.map((img, index) => `
+                                    <div class="col-md-3 col-6">
+                                        <div class="card h-100 valid-id-card">
+                                            <img src="../../../${img.file_path}" 
+                                                 class="card-img-top" 
+                                                 style="height: 150px; object-fit: cover; cursor: pointer;"
+                                                 onclick="previewValidIdImage('../../../${img.file_path}', '${img.filename}')"
+                                                 alt="Valid ID ${index + 1}">
+                                            <div class="card-body p-2">
+                                                <small class="text-muted d-block">${img.filename}</small>
+                                                <button class="btn btn-sm btn-outline-primary w-100 mt-1 valid-id-preview-btn" 
+                                                        onclick="previewValidIdImage('../../../${img.file_path}', '${img.filename}')">
+                                                    <i class="fas fa-eye me-1"></i>Preview
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    validIdImages = `
+                        <div class="mt-4">
+                            <h6 class="mb-3"><i class="fas fa-id-card me-2"></i>Valid ID Documents</h6>
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>No valid ID documents uploaded
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading valid ID images:', error);
+                validIdImages = `
+                    <div class="mt-4">
+                        <h6 class="mb-3"><i class="fas fa-id-card me-2"></i>Valid ID Documents</h6>
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Error loading valid ID documents
+                        </div>
+                    </div>
+                `;
+            }
+        } else {
+            validIdImages = `
+                <div class="mt-4">
+                    <h6 class="mb-3"><i class="fas fa-id-card me-2"></i>Valid ID Documents</h6>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>No valid ID documents uploaded
+                    </div>
+                </div>
+            `;
+        }
+
+        // Update the modal content with the loaded valid ID images
+        const validIdContainer = modalContent.querySelector('.mt-4');
+        if (validIdContainer) {
+            validIdContainer.outerHTML = validIdImages;
+        }
     }
 
     async exportUsers() {
@@ -568,6 +655,47 @@ function exportUsers() {
 
 function bulkAction(action) {
     userManager.bulkAction(action);
+}
+
+// Global function for previewing valid ID images
+function previewValidIdImage(imageUrl, filename) {
+    const previewImage = document.getElementById('previewImage');
+    const downloadLink = document.getElementById('downloadImage');
+    const overlay = document.getElementById('imagePreviewOverlay');
+    
+    previewImage.src = imageUrl;
+    downloadLink.href = imageUrl;
+    downloadLink.download = filename;
+    
+    // Show the custom overlay
+    overlay.style.display = 'flex';
+    
+    // Add event listeners for closing the overlay
+    const closeBtn = document.getElementById('closeImagePreview');
+    const closeBtn2 = document.getElementById('closeImagePreviewBtn');
+    
+    const closeOverlay = () => {
+        overlay.style.display = 'none';
+    };
+    
+    closeBtn.onclick = closeOverlay;
+    closeBtn2.onclick = closeOverlay;
+    
+    // Close when clicking outside the container
+    overlay.onclick = (e) => {
+        if (e.target === overlay) {
+            closeOverlay();
+        }
+    };
+    
+    // Close with Escape key
+    const handleEscape = (e) => {
+        if (e.key === 'Escape') {
+            closeOverlay();
+            document.removeEventListener('keydown', handleEscape);
+        }
+    };
+    document.addEventListener('keydown', handleEscape);
 }
 
 // Initialize user manager when DOM is loaded

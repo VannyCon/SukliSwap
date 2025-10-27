@@ -26,23 +26,43 @@ class AuthController {
             return;
         }
 
-        // Get JSON input
-        $input = json_decode(file_get_contents('php://input'), true);
-        
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            http_response_code(400);
-            echo json_encode([
-                'success' => false,
-                'message' => 'Invalid JSON input'
-            ]);
-            return;
+        // Check if this is a multipart form data request (file upload)
+        if (isset($_FILES['valid_id']) && !empty($_FILES['valid_id']['name'][0])) {
+            // Handle file upload registration
+            $userData = [
+                'username' => $_POST['username'] ?? '',
+                'email' => $_POST['email'] ?? '',
+                'password' => $_POST['password'] ?? '',
+                'first_name' => $_POST['first_name'] ?? '',
+                'last_name' => $_POST['last_name'] ?? '',
+                'phone' => $_POST['phone'] ?? '',
+                'role' => $_POST['role'] ?? 'user'
+            ];
+
+            // Clean input data
+            $userData = config::cleanArray($userData);
+
+            // Register user with file upload (multiple files supported)
+            $result = $this->authService->registerWithFile($userData, $_FILES['valid_id']);
+        } else {
+            // Handle JSON input (fallback for non-file uploads)
+            $input = json_decode(file_get_contents('php://input'), true);
+            
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                http_response_code(400);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Invalid input data'
+                ]);
+                return;
+            }
+
+            // Clean input data
+            $userData = config::cleanArray($input);
+
+            // Register user
+            $result = $this->authService->register($userData);
         }
-
-        // Clean input data
-        $userData = config::cleanArray($input);
-
-        // Register user
-        $result = $this->authService->register($userData);
         
         if ($result['success']) {
             http_response_code(201);
@@ -283,6 +303,16 @@ class AuthController {
         
         if ($isAuthenticated) {
             $user = $this->authService->getCurrentUser();
+            // $isDeclined = $this->authService->isDeclined();
+            // if ($isDeclined) {
+            //     echo json_encode([
+            //         'success' => true,
+            //         'authenticated' => false,
+            //         'declined' => true,
+            //         'message' => 'Your account has been declined'
+            //     ]);
+            //     return;    
+            // }
             echo json_encode([
                 'success' => true,
                 'authenticated' => true,

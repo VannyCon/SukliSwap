@@ -239,6 +239,15 @@ class AuthManager {
      */
     async checkAuth() {
         const { data } = await this.apiRequest(`${this.baseURL}/auth/auth.php?action=check`);
+        
+        // Check if account is declined
+        if (data.declined) {
+            this.clearAuth();
+            alert(data.message || 'Your account has been declined. Please contact support.');
+            window.location.href = `${this.baseURL}/view/pages/auth/declined.php`;
+            return data;
+        }
+        
         return data;
     }
 

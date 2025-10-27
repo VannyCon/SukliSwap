@@ -214,7 +214,7 @@
 
 <!-- User Details Modal -->
 <div class="modal fade" id="userDetailsModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">User Details</h5>
@@ -230,12 +230,101 @@
     </div>
 </div>
 
+<!-- Image Preview Overlay -->
+<div id="imagePreviewOverlay" class="image-preview-overlay" style="display: none;">
+    <div class="image-preview-container">
+        <div class="image-preview-header">
+            <h5 class="image-preview-title">Valid ID Preview</h5>
+            <button type="button" class="btn-close" id="closeImagePreview" aria-label="Close"></button>
+        </div>
+        <div class="image-preview-body">
+            <img id="previewImage" src="" class="img-fluid" style="max-height: 70vh; object-fit: contain;" alt="Valid ID Preview">
+        </div>
+        <div class="image-preview-footer">
+            <button type="button" class="btn btn-secondary" id="closeImagePreviewBtn">Close</button>
+            <a id="downloadImage" href="" download class="btn btn-primary">
+                <i class="fas fa-download me-1"></i>Download
+            </a>
+        </div>
+    </div>
+</div>
+
 <style>
 .table th {
     border-top: none;
     font-weight: 600;
     font-size: 0.875rem;
     color: #6c757d;
+}
+
+/* Image Preview Overlay Styles */
+.image-preview-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.image-preview-container {
+    background: white;
+    border-radius: 8px;
+    max-width: 90%;
+    max-height: 90%;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.image-preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.image-preview-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.image-preview-body {
+    padding: 20px;
+    text-align: center;
+    flex: 1;
+    overflow: auto;
+}
+
+.image-preview-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 15px 20px;
+    border-top: 1px solid #dee2e6;
+}
+
+#closeImagePreview, #closeImagePreviewBtn {
+    cursor: pointer;
+}
+
+#closeImagePreview {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .table td {
@@ -270,6 +359,36 @@
     font-weight: 600;
 }
 
+/* Valid ID Images Styles */
+.valid-id-card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    border: 1px solid #dee2e6;
+}
+
+.valid-id-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.valid-id-card img {
+    transition: opacity 0.2s ease-in-out;
+}
+
+.valid-id-card:hover img {
+    opacity: 0.8;
+}
+
+.valid-id-preview-btn {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* Image Preview Modal Styles */
+#previewImage {
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
 @media (max-width: 768px) {
     .table-responsive {
         font-size: 0.8rem;
@@ -283,6 +402,15 @@
     .btn-group .btn {
         font-size: 0.75rem;
         padding: 0.25rem 0.5rem;
+    }
+    
+    .valid-id-card {
+        margin-bottom: 1rem;
+    }
+    
+    .valid-id-preview-btn {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.4rem;
     }
 }
 </style>

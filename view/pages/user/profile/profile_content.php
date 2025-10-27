@@ -19,7 +19,7 @@
                 </div>
                 <div class="card-body">
                     <form id="profileForm">
-                        <div class="row">
+                        <!-- <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="business_name" class="form-label">Business Name</label>
@@ -38,7 +38,7 @@
                                     </select>
                                 </div>
                             </div>
-                        </div>
+                        </div> -->
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">

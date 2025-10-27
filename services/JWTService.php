@@ -7,7 +7,7 @@ use Firebase\JWT\Key;
 class JWTService {
     private $secretKey;
     private $algorithm = 'HS256';
-    private $expirationTime = 3600; // 1 hour in seconds
+    private $expirationTime = 24000; // 10 hours in seconds
 
     public function __construct() {
         // You should set this in your environment variables or config

@@ -1,14 +1,17 @@
 <?php
 require_once __DIR__ . '/JWTService.php';
 require_once __DIR__ . '/LoginServices.php';
+require_once __DIR__ . '/FileUploadService.php';
 
 class AuthService {
     private $jwtService;
     private $userModel;
+    private $fileUploadService;
 
     public function __construct() {
         $this->jwtService = new JWTService();
         $this->userModel = new LoginServices();
+        $this->fileUploadService = new FileUploadService();
     }
 
     /**
@@ -74,6 +77,139 @@ class AuthService {
         $user = $this->userModel->findById($userId);
         
         if ($user === false) {
+            return [
+                'success' => false,
+                'message' => 'User created but failed to retrieve user data'
+            ];
+        }
+
+        // Generate JWT token
+        $tokenPayload = [
+            'id' => $user['id'],
+            'username' => $user['username'],
+            'email' => $user['email'],
+            'role' => $user['role'],
+            'is_verified' => $user['is_verified']
+        ];
+
+        $token = $this->jwtService->generateToken($tokenPayload);
+
+        return [
+            'success' => true,
+            'message' => 'User registered successfully. Your account is pending admin verification.',
+            'data' => [
+                'user' => [
+                    'id' => $user['id'],
+                    'username' => $user['username'],
+                    'email' => $user['email'],
+                    'role' => $user['role'],
+                    'is_verified' => $user['is_verified'],
+                    'created_at' => $user['created_at']
+                ],
+                'token' => $token
+            ]
+        ];
+    }
+
+    /**
+     * Register a new user with file upload
+     * @param array $userData User registration data
+     * @param array $file $_FILES array element for valid ID
+     * @return array Response array with success status and data/message
+     */
+    public function registerWithFile($userData, $file) {
+        // Validate required fields
+        $requiredFields = ['username', 'email', 'password', 'first_name', 'last_name'];
+        foreach ($requiredFields as $field) {
+            if (empty($userData[$field])) {
+                return [
+                    'success' => false,
+                    'message' => ucfirst(str_replace('_', ' ', $field)) . ' is required'
+                ];
+            }
+        }
+
+        // Validate email format
+        if (!filter_var($userData['email'], FILTER_VALIDATE_EMAIL)) {
+            return [
+                'success' => false,
+                'message' => 'Invalid email format'
+            ];
+        }
+
+        // Validate password strength
+        if (strlen($userData['password']) < 6) {
+            return [
+                'success' => false,
+                'message' => 'Password must be at least 6 characters long'
+            ];
+        }
+
+        // Check if email already exists
+        if ($this->userModel->emailExists($userData['email'])) {
+            return [
+                'success' => false,
+                'message' => 'Email already exists'
+            ];
+        }
+
+        // Check if username already exists
+        if ($this->userModel->usernameExists($userData['username'])) {
+            return [
+                'success' => false,
+                'message' => 'Username already exists'
+            ];
+        }
+
+        // Create user first to get user ID
+        $userId = $this->userModel->createUser($userData);
+        
+        if ($userId === false) {
+            return [
+                'success' => false,
+                'message' => 'Failed to create user account'
+            ];
+        }
+
+        // Upload valid ID files (multiple files supported) with user ID for folder organization
+        $uploadResult = $this->fileUploadService->uploadMultipleFiles($file, 'valid_ids/', $userId);
+        
+        if (!$uploadResult['success']) {
+            // If file upload fails, delete the created user
+            $this->userModel->deleteUser($userId);
+            return [
+                'success' => false,
+                'message' => $uploadResult['message']
+            ];
+        }
+
+        // Update user with comma-separated file paths
+        $updateResult = $this->userModel->updateUserValidId($userId, $uploadResult['data']['file_paths']);
+        
+        if (!$updateResult) {
+            // If update fails, delete uploaded files and user
+            $filePaths = explode(',', $uploadResult['data']['file_paths']);
+            foreach ($filePaths as $filePath) {
+                $this->fileUploadService->deleteFile(trim($filePath));
+            }
+            $this->userModel->deleteUser($userId);
+            return [
+                'success' => false,
+                'message' => 'Failed to update user with file information'
+            ];
+        }
+
+        // Get created user data
+        $user = $this->userModel->findById($userId);
+        
+        if ($user === false) {
+            // If user retrieval fails, delete all uploaded files and user
+            $filePaths = explode(',', $uploadResult['data']['file_paths']);
+            foreach ($filePaths as $filePath) {
+                $this->fileUploadService->deleteFile(trim($filePath));
+            }
+            $this->userModel->deleteUser($userId);
+            
             return [
                 'success' => false,
                 'message' => 'User created but failed to retrieve user data'
@@ -310,6 +446,19 @@ class AuthService {
         }
 
         return $this->validateToken($token);
+    }
+
+    public function isDeclined() {
+        $user = $this->getCurrentUser();
+        if (!$user['success'] || !isset($user['data']['user']['id'])) {
+            return false;
+        }
+        $userId = $user['data']['user']['id'];
+        $sql = "SELECT is_verified FROM tbl_users WHERE id = ? AND is_verified = 2";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([$userId]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result && $result['is_verified'] == 2;
     }
 
     /**

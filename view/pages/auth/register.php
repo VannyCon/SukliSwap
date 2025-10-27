@@ -306,8 +306,7 @@ body {
 
                     <div class="mb-3">
                         <label for="phone" class="form-label">Phone Number</label>
-                        <input type="tel" class="form-control" id="phone" name="phone">
-                        <div class="form-text">Optional - for better communication</div>
+                        <input type="tel" class="form-control" id="phone" name="phone" required>
                     </div>
 
                     <div class="mb-3">
@@ -335,20 +334,15 @@ body {
                     </div>
 
                     <div class="mb-3">
-                        <label for="business_type" class="form-label">Business Type</label>
-                        <select class="form-select" id="business_type" name="business_type">
-                            <option value="">Select your business type (optional)</option>
-                            <option value="store">Store</option>
-                            <option value="piso_wifi">PisoWiFi</option>
-                            <option value="restaurant">Restaurant</option>
-                            <option value="other">Other</option>
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="business_name" class="form-label">Business Name</label>
-                        <input type="text" class="form-control" id="business_name" name="business_name">
-                        <div class="form-text">Optional - your business or establishment name</div>
+                        <label for="valid_id" class="form-label">Valid ID Upload</label>
+                        <input type="file" class="form-control" id="valid_id" name="valid_id[]" accept="image/*" multiple required>
+                        <div class="form-text">
+                            <small>Please upload clear photos of your valid government-issued ID (Driver's License, Passport, National ID, etc.). You can upload multiple images.</small>
+                        </div>
+                        <div class="invalid-feedback">
+                            Please upload at least one valid ID image.
+                        </div>
+                        <div id="file-preview" class="mt-2"></div>
                     </div>
 
                     <div class="mb-4">
@@ -442,17 +436,39 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const formData = new FormData(this);
             
-            // Prepare data as JSON
-            const data = {};
-            
-            // Convert FormData to object
-            for (let [key, value] of formData.entries()) {
-                data[key] = value;
+            // Validate file uploads
+            const validIdFiles = document.getElementById('valid_id').files;
+            if (validIdFiles.length === 0) {
+                showMessage('Please upload at least one valid ID image', 'error');
+                return;
             }
 
-            const response = await axios.post('../../../auth/auth.php?action=register', data, {
+            // Check each file
+            for (let i = 0; i < validIdFiles.length; i++) {
+                const file = validIdFiles[i];
+                
+                // Check file size (max 5MB per file)
+                if (file.size > 5 * 1024 * 1024) {
+                    showMessage(`File "${file.name}" size must be less than 5MB`, 'error');
+                    return;
+                }
+
+                // Check file type
+                if (!file.type.startsWith('image/')) {
+                    showMessage(`File "${file.name}" is not a valid image file`, 'error');
+                    return;
+                }
+            }
+
+            // Check total number of files (max 5 files)
+            if (validIdFiles.length > 5) {
+                showMessage('Maximum 5 files allowed', 'error');
+                return;
+            }
+
+            const response = await axios.post('../../../auth/auth.php?action=register', formData, {
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'multipart/form-data'
                 }
             });
 
@@ -487,6 +503,44 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
     }
+
+    // File preview functionality
+    const fileInput = document.getElementById('valid_id');
+    const filePreview = document.getElementById('file-preview');
+    
+    fileInput.addEventListener('change', function() {
+        filePreview.innerHTML = '';
+        
+        if (this.files.length > 0) {
+            const previewContainer = document.createElement('div');
+            previewContainer.className = 'row g-2';
+            
+            Array.from(this.files).forEach((file, index) => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const col = document.createElement('div');
+                        col.className = 'col-md-3 col-6';
+                        
+                        col.innerHTML = `
+                            <div class="card">
+                                <img src="${e.target.result}" class="card-img-top" style="height: 100px; object-fit: cover;" alt="Preview ${index + 1}">
+                                <div class="card-body p-2">
+                                    <small class="text-muted">${file.name}</small>
+                                    <br>
+                                    <small class="text-muted">${(file.size / 1024 / 1024).toFixed(2)} MB</small>
+                                </div>
+                            </div>
+                        `;
+                        previewContainer.appendChild(col);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            filePreview.appendChild(previewContainer);
+        }
+    });
 
     // Real-time validation
     const inputs = registerForm.querySelectorAll('input, select');
