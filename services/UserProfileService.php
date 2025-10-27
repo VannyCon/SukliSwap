@@ -1,5 +1,5 @@
 <?php
-require_once('../connection/connection.php');
+require_once(__DIR__ . '/../connection/connection.php');
 
 class UserProfileService extends config {
     
@@ -10,13 +10,33 @@ class UserProfileService extends config {
      */
     public function getUserProfile($userId) {
         try {
-            $query = "SELECT up.*, u.username, u.email, u.first_name, u.last_name, u.phone, u.profile_image, u.is_verified
+            $query = "SELECT up.*, u.username, u.email, u.first_name, u.last_name, u.phone as contact_number, u.profile_image, u.is_verified, u.created_at, u.updated_at as last_login
                      FROM tbl_user_profiles up
-                     JOIN tbl_users u ON up.user_id = u.id
-                     WHERE up.user_id = ?";
+                     RIGHT JOIN tbl_users u ON up.user_id = u.id
+                     WHERE u.id = ?";
             $stmt = $this->pdo->prepare($query);
             $stmt->execute([$userId]);
-            return $stmt->fetch(PDO::FETCH_ASSOC);
+            $profile = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($profile) {
+                // Add location field if coordinates exist
+                if ($profile['latitude'] && $profile['longitude']) {
+                    $profile['location'] = $profile['latitude'] . ', ' . $profile['longitude'];
+                } else {
+                    $profile['location'] = '';
+                }
+                
+                // Ensure all expected fields exist
+                $profile['business_name'] = $profile['business_name'] ?? '';
+                $profile['business_type'] = $profile['business_type'] ?? '';
+                $profile['address'] = $profile['address'] ?? '';
+                $profile['bio'] = $profile['bio'] ?? '';
+                $profile['contact_number'] = $profile['contact_number'] ?? '';
+                $profile['profile_image'] = $profile['profile_image'] ?? '../../assets/images/default-avatar.png';
+                $profile['status'] = $profile['is_verified'] ? 'Verified' : 'Unverified';
+            }
+            
+            return $profile;
         } catch (PDOException $e) {
             error_log("Get user profile error: " . $e->getMessage());
             return false;
@@ -28,6 +48,20 @@ class UserProfileService extends config {
      */
     public function updateUserProfile($userId, $data) {
         try {
+            $this->pdo->beginTransaction();
+            
+            // Update user basic info (phone/contact_number)
+            if (isset($data['contact_number'])) {
+                $userQuery = "UPDATE tbl_users SET phone = ?, first_name = ?, last_name = ? WHERE id = ?";
+                $userStmt = $this->pdo->prepare($userQuery);
+                $userStmt->execute([
+                    $data['contact_number'],
+                    $data['first_name'] ?? null,
+                    $data['last_name'] ?? null,
+                    $userId
+                ]);
+            }
+            
             // Check if profile exists
             $checkQuery = "SELECT id FROM tbl_user_profiles WHERE user_id = ?";
             $checkStmt = $this->pdo->prepare($checkQuery);
@@ -76,12 +110,15 @@ class UserProfileService extends config {
 
             $stmt = $this->pdo->prepare($query);
             $stmt->execute($params);
+            
+            $this->pdo->commit();
 
             return [
                 'success' => true,
                 'message' => 'Profile updated successfully'
             ];
         } catch (PDOException $e) {
+            $this->pdo->rollBack();
             error_log("Update user profile error: " . $e->getMessage());
             return [
                 'success' => false,
@@ -490,5 +527,176 @@ class UserProfileService extends config {
     }
 
     // ============ UTILITY METHODS ============
+    
+    /**
+     * Upload profile picture
+     */
+    public function uploadProfilePicture($userId, $file) {
+        try {
+            $uploadDir = '../data/profile/customer/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+            
+            $fileExtension = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $fileName = 'user_' . $userId . '_' . time() . '.' . $fileExtension;
+            $filePath = $uploadDir . $fileName;
+            
+            if (move_uploaded_file($file['tmp_name'], $filePath)) {
+                // Update user profile image in database
+                $query = "UPDATE tbl_users SET profile_image = ? WHERE id = ?";
+                $stmt = $this->pdo->prepare($query);
+                $stmt->execute(['data/profile/customer/' . $fileName, $userId]);
+                
+                return [
+                    'success' => true,
+                    'message' => 'Profile picture uploaded successfully',
+                    'image_path' => 'data/profile/customer/' . $fileName
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'message' => 'Failed to upload file'
+                ];
+            }
+        } catch (PDOException $e) {
+            error_log("Upload profile picture error: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Failed to upload profile picture: ' . $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
+     * Change user password
+     */
+    public function changePassword($userId, $currentPassword, $newPassword) {
+        try {
+            // Verify current password
+            $query = "SELECT password_hash FROM tbl_users WHERE id = ?";
+            $stmt = $this->pdo->prepare($query);
+            $stmt->execute([$userId]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$user || !password_verify($currentPassword, $user['password_hash'])) {
+                return [
+                    'success' => false,
+                    'message' => 'Current password is incorrect'
+                ];
+            }
+            
+            // Update password
+            $newPasswordHash = password_hash($newPassword, PASSWORD_DEFAULT);
+            $updateQuery = "UPDATE tbl_users SET password_hash = ? WHERE id = ?";
+            $updateStmt = $this->pdo->prepare($updateQuery);
+            $updateStmt->execute([$newPasswordHash, $userId]);
+            
+            return [
+                'success' => true,
+                'message' => 'Password changed successfully'
+            ];
+        } catch (PDOException $e) {
+            error_log("Change password error: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Failed to change password: ' . $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
+     * Delete user account
+     */
+    public function deleteUserAccount($userId) {
+        try {
+            $this->pdo->beginTransaction();
+            
+            // Delete user profile
+            $profileQuery = "DELETE FROM tbl_user_profiles WHERE user_id = ?";
+            $profileStmt = $this->pdo->prepare($profileQuery);
+            $profileStmt->execute([$userId]);
+            
+            // Delete user
+            $userQuery = "DELETE FROM tbl_users WHERE id = ?";
+            $userStmt = $this->pdo->prepare($userQuery);
+            $userStmt->execute([$userId]);
+            
+            $this->pdo->commit();
+            
+            return [
+                'success' => true,
+                'message' => 'Account deleted successfully'
+            ];
+        } catch (PDOException $e) {
+            $this->pdo->rollBack();
+            error_log("Delete user account error: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Failed to delete account: ' . $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
+     * Get user activity
+     */
+    public function getUserActivity($userId, $limit = 10) {
+        try {
+            $query = "SELECT 
+                         'request' as type,
+                         CONCAT('Created request for ', ct.denomination, ' peso coins') as description,
+                         cr.created_at
+                      FROM tbl_coin_requests cr
+                      JOIN tbl_coin_types ct ON cr.coin_type_id = ct.id
+                      WHERE cr.user_id = ?
+                      
+                      UNION ALL
+                      
+                      SELECT 
+                         'offer' as type,
+                         CONCAT('Created offer for ', ct.denomination, ' peso coins') as description,
+                         co.created_at
+                      FROM tbl_coin_offers co
+                      JOIN tbl_coin_types ct ON co.coin_type_id = ct.id
+                      WHERE co.user_id = ?
+                      
+                      UNION ALL
+                      
+                      SELECT 
+                         'transaction' as type,
+                         CONCAT('Completed transaction for ', ct.denomination, ' peso coins') as description,
+                         t.completion_time as created_at
+                      FROM tbl_transactions t
+                      JOIN tbl_coin_types ct ON t.coin_type_id = ct.id
+                      WHERE (t.requestor_id = ? OR t.offeror_id = ?) AND t.status = 'completed'
+                      
+                      ORDER BY created_at DESC
+                      LIMIT :limit";
+            
+            $stmt = $this->pdo->prepare($query);
+            $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+            $stmt->execute([$userId, $userId, $userId, $userId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Get user activity error: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Clean array data
+     */
+    public static function cleanArray($data) {
+        $cleaned = [];
+        foreach ($data as $key => $value) {
+            if (is_string($value)) {
+                $cleaned[$key] = trim($value);
+            } else {
+                $cleaned[$key] = $value;
+            }
+        }
+        return $cleaned;
+    }
 }
 ?>

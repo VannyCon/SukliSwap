@@ -314,7 +314,7 @@ class SidebarManager {
             if (userProfileImage) {
                 if (user.profile_image) {
                     // Construct the full path to the profile image
-                    const profileImagePath = `../../../../data/profile/customer/${user.profile_image}`;
+                    const profileImagePath = `../../../../${user.profile_image}`;
                     userProfileImage.src = profileImagePath;
                     userProfileImage.onerror = function() {
                         // Fallback to logo if image fails to load

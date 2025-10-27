@@ -19,6 +19,20 @@
                 </div>
                 <div class="card-body">
                     <form id="profileForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="first_name" class="form-label">First Name</label>
+                                    <input type="text" class="form-control" id="first_name" name="first_name">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="last_name" class="form-label">Last Name</label>
+                                    <input type="text" class="form-control" id="last_name" name="last_name">
+                                </div>
+                            </div>
+                        </div>
                         <!-- <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
@@ -57,7 +71,7 @@
                             <label for="address" class="form-label">Address</label>
                             <textarea class="form-control" id="address" name="address" rows="3"></textarea>
                         </div>
-                        <div class="mb-3">
+                        <!-- <div class="mb-3">
                             <label for="bio" class="form-label">Bio</label>
                             <textarea class="form-control" id="bio" name="bio" rows="3" placeholder="Tell us about yourself..."></textarea>
                         </div>
@@ -71,7 +85,7 @@
                             </div>
                             <input type="hidden" id="longitude" name="longitude">
                             <input type="hidden" id="latitude" name="latitude">
-                        </div>
+                        </div> -->
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-save"></i> Update Profile
                         </button>
@@ -171,14 +185,14 @@
                             <span id="lastLogin">-</span>
                         </div>
                     </div>
-                    <div class="mb-3">
+                    <!-- <div class="mb-3">
                         <div class="d-flex justify-content-between">
                             <span>Profile Completeness:</span>
                             <div class="progress" style="width: 60%;">
                                 <div class="progress-bar" id="profileCompleteness" role="progressbar" style="width: 0%"></div>
                             </div>
                         </div>
-                    </div>
+                    </div> -->
                 </div>
             </div>
 

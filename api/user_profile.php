@@ -24,50 +24,77 @@ $profileService = new UserProfileService();
 
 // All profile operations require authentication
 $middleware->requireAuth(function() {
-    error_log("Inside authenticated callback");
     global $profileService;
     
-    // Handle all actions via POST method
-    if ($_SERVER["REQUEST_METHOD"] == "POST") {
-        $action = $_GET['action'] ?? '';
+    $method = $_SERVER['REQUEST_METHOD'];
+    $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    $pathParts = explode('/', trim($path, '/'));
+    $endpoint = end($pathParts);
+    
+    try {
+        // Get action parameter from GET or POST
+        $action = $_GET['action'] ?? $_POST['action'] ?? '';
         
+        // Get request data - handle both JSON and form data
+        $requestData = [];
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+            
+            if (strpos($contentType, 'application/json') !== false) {
+                // Handle JSON data
+                $json = file_get_contents('php://input');
+                $requestData = json_decode($json, true) ?? [];
+            } else {
+                // Handle form data
+                $requestData = $_POST;
+            }
+        }
+        
+        // Handle all requests through action parameter
         switch ($action) {
-            case 'uploadProfilePicture':
-                if (!isset($_FILES['profile_picture'])) {
-                    http_response_code(400);
-                    echo json_encode(['success' => false, 'message' => 'No file uploaded']);
-                    break;
-                }
-                
-                $result = $profileService->uploadProfilePicture($GLOBALS['current_user']['id'], $_FILES['profile_picture']);
-                echo json_encode($result);
-                break;
-                
             case 'getUserProfile':
+                // Get user profile
                 $result = $profileService->getUserProfile($GLOBALS['current_user']['id']);
-                echo json_encode($result);
+                if ($result) {
+                    echo json_encode(['success' => true, 'data' => $result]);
+                } else {
+                    http_response_code(404);
+                    echo json_encode(['success' => false, 'message' => 'Profile not found']);
+                }
                 break;
-
+                
             case 'getUserStats':
+                // Get user stats
                 $result = $profileService->getUserStats($GLOBALS['current_user']['id']);
-                echo json_encode($result);
+                if ($result) {
+                    echo json_encode(['success' => true, 'data' => $result]);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Stats not found']);
+                }
                 break;
-
+                
             case 'getUserActivity':
+                // Get user activity
                 $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 10;
                 $result = $profileService->getUserActivity($GLOBALS['current_user']['id'], $limit);
-                echo json_encode($result);
+                if ($result !== false) {
+                    echo json_encode(['success' => true, 'data' => $result]);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Activity not found']);
+                }
                 break;
                 
             case 'updateUserProfile':
-                $data = $profileService->cleanArray($_POST);
+                // Update user profile
+                $data = $profileService->cleanArray($requestData);
                 $result = $profileService->updateUserProfile($GLOBALS['current_user']['id'], $data);
                 echo json_encode($result);
                 break;
-
+                
             case 'changePassword':
-                $currentPassword = $_POST['current_password'] ?? '';
-                $newPassword = $_POST['new_password'] ?? '';
+                // Change password
+                $currentPassword = $requestData['current_password'] ?? '';
+                $newPassword = $requestData['new_password'] ?? '';
                 
                 if (!$currentPassword || !$newPassword) {
                     http_response_code(400);
@@ -83,8 +110,21 @@ $middleware->requireAuth(function() {
                 echo json_encode($result);
                 break;
                 
+            case 'uploadProfilePicture':
+                // Upload profile picture
+                if (!isset($_FILES['profile_picture'])) {
+                    http_response_code(400);
+                    echo json_encode(['success' => false, 'message' => 'No file uploaded']);
+                    break;
+                }
+                
+                $result = $profileService->uploadProfilePicture($GLOBALS['current_user']['id'], $_FILES['profile_picture']);
+                echo json_encode($result);
+                break;
+                
             case 'deleteUserAccount':
-                $confirmation = $_POST['confirmation'] ?? '';
+                // Delete user account
+                $confirmation = $requestData['confirmation'] ?? '';
                 
                 if ($confirmation !== 'DELETE') {
                     http_response_code(400);
@@ -97,25 +137,20 @@ $middleware->requireAuth(function() {
                 break;
                 
             default:
-                http_response_code(400);
-                echo json_encode([
-                    'success' => false, 
-                    'message' => 'Invalid action',
-                    'available_actions' => [
-                        'uploadProfilePicture', 'getUserProfile', 'getUserStats', 'getUserActivity',
-                        'updateUserProfile', 'changePassword', 'deleteUserAccount'
-                    ]
-                ]);
+                // If no action specified, default to getting user profile
+                $result = $profileService->getUserProfile($GLOBALS['current_user']['id']);
+                if ($result) {
+                    echo json_encode(['success' => true, 'data' => $result]);
+                } else {
+                    http_response_code(404);
+                    echo json_encode(['success' => false, 'message' => 'Profile not found']);
+                }
                 break;
         }
-    } 
-    // else {
-    //     http_response_code(405);
-    //     echo json_encode([
-    //         'success' => false,
-    //         'message' => 'Method not allowed',
-    //         'allowed_methods' => ['POST']
-    //     ]);
-    // }
-});
+    } catch (Exception $e) {
+        error_log("Profile API error: " . $e->getMessage());
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Internal server error']);
+    }});
+
 ?>

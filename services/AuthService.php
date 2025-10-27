@@ -344,7 +344,8 @@ class AuthService {
                     'role' => $user['role'],
                     'is_verified' => $user['is_verified'],
                     'created_at' => $user['created_at'],
-                    'full_name' => $user['first_name'] . ' ' . $user['last_name']
+                    'full_name' => $user['first_name'] . ' ' . $user['last_name'],
+                    'profile_image' => $user['profile_image']
                 ],
                 'token' => $token
             ]

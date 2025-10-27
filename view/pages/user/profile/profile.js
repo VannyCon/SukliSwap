@@ -1,8 +1,15 @@
 /**
  * Profile Manager - Handles user profile operations
  */
+let userProfileAPI = null;
+let headerAPI = null;
+let formHeaderAPI = null;
 class ProfileManager {
     constructor() {
+        const authManager = new AuthManager();
+        userProfileAPI = authManager.API_CONFIG.baseURL + 'user_profile.php';
+        headerAPI = authManager.API_CONFIG.getHeaders();
+        formHeaderAPI = authManager.API_CONFIG.getFormHeaders();
         this.userProfile = null;
         this.userStats = null;
         this.recentActivity = [];
@@ -52,21 +59,16 @@ class ProfileManager {
 
     async loadProfile() {
         try {
-            const response = await fetch('/api/user_profile.php', {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
+            const response = await axios.get(`${userProfileAPI}?action=getUserProfile`, {
+                headers: headerAPI
             });
 
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success) {
-                    this.userProfile = data.data;
-                    this.populateProfileForm();
-                    this.updateProfileDisplay();
-                } else {
-                    this.showError(data.message);
-                }
+            if (response.data.success) {
+                this.userProfile = response.data.data || {};
+                this.populateProfileForm();
+                this.updateProfileDisplay();
+            } else {
+                this.showError(response.data.message || 'Failed to load profile');
             }
         } catch (error) {
             console.error('Error loading profile:', error);
@@ -78,19 +80,21 @@ class ProfileManager {
         if (!this.userProfile) return;
 
         // Populate form fields
-        document.getElementById('business_name').value = this.userProfile.business_name || '';
-        document.getElementById('business_type').value = this.userProfile.business_type || '';
+        document.getElementById('first_name').value = this.userProfile.first_name || '';
+        document.getElementById('last_name').value = this.userProfile.last_name || '';
+        // document.getElementById('business_name').value = this.userProfile.business_name || '';
+        // document.getElementById('business_type').value = this.userProfile.business_type || '';
         document.getElementById('contact_number').value = this.userProfile.contact_number || '';
         document.getElementById('email').value = this.userProfile.email || '';
         document.getElementById('address').value = this.userProfile.address || '';
-        document.getElementById('bio').value = this.userProfile.bio || '';
-        document.getElementById('location').value = this.userProfile.location || '';
-        document.getElementById('longitude').value = this.userProfile.longitude || '';
-        document.getElementById('latitude').value = this.userProfile.latitude || '';
+        // document.getElementById('bio').value = this.userProfile.bio || '';
+        // document.getElementById('location').value = this.userProfile.location || '';
+        // document.getElementById('longitude').value = this.userProfile.longitude || '';
+        // document.getElementById('latitude').value = this.userProfile.latitude || '';
 
         // Update profile image
         if (this.userProfile.profile_image) {
-            document.getElementById('profileImage').src = this.userProfile.profile_image;
+            document.getElementById('profileImage').src = '../../../../' + this.userProfile.profile_image;
         }
     }
 
@@ -105,14 +109,14 @@ class ProfileManager {
 
         // Update profile completeness
         const completeness = this.calculateProfileCompleteness();
-        document.getElementById('profileCompleteness').style.width = `${completeness}%`;
+        // document.getElementById('profileCompleteness').style.width = `${completeness}%`;
     }
 
     calculateProfileCompleteness() {
         if (!this.userProfile) return 0;
 
         const fields = [
-            'business_name', 'business_type', 'contact_number', 
+            'first_name', 'last_name', 'business_name', 'business_type', 'contact_number', 
             'email', 'address', 'bio', 'location'
         ];
 
@@ -128,21 +132,21 @@ class ProfileManager {
 
     async loadUserStats() {
         try {
-            const response = await fetch('/api/user_profile.php/stats', {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
+            const response = await axios.get(`${userProfileAPI}?action=getUserStats`, {
+                headers: headerAPI
             });
 
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success) {
-                    this.userStats = data.data;
-                    this.renderUserStats();
-                }
+            if (response.data.success) {
+                this.userStats = response.data.data || {};
+                this.renderUserStats();
+            } else {
+                this.userStats = {};
+                this.renderUserStats();
             }
         } catch (error) {
             console.error('Error loading user stats:', error);
+            this.userStats = {};
+            this.renderUserStats();
         }
     }
 
@@ -186,27 +190,32 @@ class ProfileManager {
 
     async loadUserActivity() {
         try {
-            const response = await fetch('/api/user_profile.php/activity?limit=5', {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
+            const response = await axios.get(`${userProfileAPI}?action=getUserActivity&limit=5`, {
+                headers: headerAPI
             });
 
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success) {
-                    this.recentActivity = data.data;
-                    this.renderRecentActivity();
-                }
+            if (response.data.success) {
+                this.recentActivity = Array.isArray(response.data.data) ? response.data.data : [];
+                this.renderRecentActivity();
+            } else {
+                this.recentActivity = [];
+                this.renderRecentActivity();
             }
         } catch (error) {
             console.error('Error loading user activity:', error);
+            this.recentActivity = [];
+            this.renderRecentActivity();
         }
     }
 
     renderRecentActivity() {
         const container = document.getElementById('recentActivityContainer');
         if (!container) return;
+
+        // Ensure recentActivity is an array
+        if (!Array.isArray(this.recentActivity)) {
+            this.recentActivity = [];
+        }
 
         if (this.recentActivity.length === 0) {
             container.innerHTML = `
@@ -234,22 +243,15 @@ class ProfileManager {
         const data = Object.fromEntries(formData.entries());
 
         try {
-            const response = await fetch('/api/user_profile.php', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
-                body: JSON.stringify(data)
+            const response = await axios.post(`${userProfileAPI}?action=updateUserProfile`, data, {
+                headers: formHeaderAPI
             });
 
-            const result = await response.json();
-            
-            if (result.success) {
+            if (response.data.success) {
                 this.showSuccess('Profile updated successfully');
                 this.loadProfile();
             } else {
-                this.showError(result.message);
+                this.showError(response.data.message);
             }
         } catch (error) {
             console.error('Error updating profile:', error);
@@ -273,31 +275,22 @@ class ProfileManager {
         }
 
         try {
-            const response = await fetch('/api/user_profile.php/password', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
-                body: JSON.stringify({
-                    current_password: data.current_password,
-                    new_password: data.new_password
-                })
+            const response = await axios.post(`${userProfileAPI}?action=changePassword`, data, {
+                headers: formHeaderAPI
             });
 
-            const result = await response.json();
-            
-            if (result.success) {
+            if (response.data.success) {
                 this.showSuccess('Password changed successfully');
                 form.reset();
             } else {
-                this.showError(result.message);
+                this.showError(response.data.message);
             }
         } catch (error) {
             console.error('Error changing password:', error);
             this.showError('Failed to change password');
         }
     }
+    
 
     getCurrentLocation() {
         if (!navigator.geolocation) {
@@ -367,7 +360,7 @@ class ProfileManager {
         // Preview image
         const reader = new FileReader();
         reader.onload = (e) => {
-            document.getElementById('profileImage').src = e.target.result;
+            document.getElementById('profileImage').src = '../../../../' + e.target.result;
         };
         reader.readAsDataURL(file);
     }
@@ -385,22 +378,16 @@ class ProfileManager {
         formData.append('profile_picture', file);
 
         try {
-            const response = await fetch('/api/user_profile.php/upload-picture', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
-                body: formData
+            const response = await axios.post(`${userProfileAPI}?action=uploadProfilePicture`, formData, {
+                headers: formHeaderAPI
             });
 
-            const result = await response.json();
-            
-            if (result.success) {
+            if (response.data.success) {
                 this.showSuccess('Profile picture uploaded successfully');
                 fileInput.value = '';
                 this.loadProfile();
             } else {
-                this.showError(result.message);
+                this.showError(response.data.message);
             }
         } catch (error) {
             console.error('Error uploading profile picture:', error);
@@ -443,13 +430,11 @@ class ProfileManager {
     }
 
     showSuccess(message) {
-        // You can implement a toast notification system here
-        alert(message);
+        CustomToast.success('Success', message);
     }
 
     showError(message) {
-        // You can implement a toast notification system here
-        alert('Error: ' + message);
+        CustomToast.error('Error', message);
     }
 }
 
