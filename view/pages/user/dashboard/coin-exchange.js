@@ -812,7 +812,6 @@ class CoinExchangeManager {
                                 <strong>From:</strong> ${request.username}<br>
                                 <strong>Quantity:</strong> ${request.quantity}<br>
                                 <strong>Location:</strong> ${request.preferred_meeting_location || 'Not specified'}<br>
-                                <strong>Business:</strong> ${request.business_name || 'N/A'}
                             </p>
                         </div>
                         <div class="col-md-4 text-right">
@@ -854,7 +853,6 @@ class CoinExchangeManager {
                                 <strong>From:</strong> ${offer.username}<br>
                                 <strong>Quantity:</strong> ${offer.quantity}<br>
                                 <strong>Location:</strong> ${offer.preferred_meeting_location || 'Not specified'}<br>
-                                <strong>Business:</strong> ${offer.business_name || 'N/A'}
                             </p>
                         </div>
                         <div class="col-md-4 text-right">
@@ -1056,7 +1054,6 @@ class CoinExchangeManager {
                     <div><strong>Denomination:</strong> ₱${request.denomination ?? ''}</div>
                     <div><strong>Quantity:</strong> ${request.quantity ?? ''}</div>
                     <div><strong>From:</strong> ${request.username ?? request.requestor_username ?? 'N/A'}</div>
-                    <div><strong>Business:</strong> ${request.business_name ?? 'N/A'}</div>
                     <div><strong>Status:</strong> ${request.status ?? 'active'}</div>
                     <div><strong>Location:</strong> ${request.preferred_meeting_location || 'Not specified'}</div>
                     ${request.notes ? `<div class="mt-2"><strong>Notes:</strong><br>${request.notes}</div>` : ''}
@@ -1115,7 +1112,6 @@ class CoinExchangeManager {
                     <div><strong>Denomination:</strong> ₱${offer.denomination ?? ''}</div>
                     <div><strong>Quantity:</strong> ${offer.quantity ?? ''}</div>
                     <div><strong>From:</strong> ${offer.username ?? offer.offeror_username ?? 'N/A'}</div>
-                    <div><strong>Business:</strong> ${offer.business_name ?? 'N/A'}</div>
                     <div><strong>Status:</strong> ${offer.status ?? 'active'}</div>
                     <div><strong>Location:</strong> ${offer.preferred_meeting_location || 'Not specified'}</div>
                     ${offer.notes ? `<div class="mt-2"><strong>Notes:</strong><br>${offer.notes}</div>` : ''}

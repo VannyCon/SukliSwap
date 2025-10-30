@@ -216,7 +216,6 @@ class AdminManager {
                             <p class="card-text">
                                 <strong>Email:</strong> ${user.email}<br>
                                 <strong>Name:</strong> ${user.first_name || ''} ${user.last_name || ''}<br>
-                                <strong>Business:</strong> ${user.business_name || 'N/A'}<br>
                                 <strong>Role:</strong> <span class="badge bg-${this.getRoleBadgeClass(user.role)}">${user.role}</span><br>
                                 <strong>Verification:</strong> <span class="badge bg-${user.is_verified ? 'success' : 'warning'}">${user.is_verified ? 'Verified' : 'Pending'}</span><br>
                                 <strong>Status:</strong> <span class="badge bg-${user.is_active ? 'success' : 'danger'}">${user.is_active ? 'Active' : 'Inactive'}</span>

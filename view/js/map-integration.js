@@ -253,7 +253,6 @@ class MapIntegrationManager {
                     <p><strong>From:</strong> ${request.username}</p>
                     <p><strong>Quantity:</strong> ${request.quantity}</p>
                     <p><strong>Location:</strong> ${request.preferred_meeting_location || 'Not specified'}</p>
-                    <p><strong>Business:</strong> ${request.business_name || 'N/A'}</p>
                     <p><strong>Created:</strong> ${this.formatDate(request.created_at)}</p>
                 </div>
                 <div class="popup-actions">
@@ -273,7 +272,6 @@ class MapIntegrationManager {
                     <p><strong>From:</strong> ${offer.username}</p>
                     <p><strong>Quantity:</strong> ${offer.quantity}</p>
                     <p><strong>Location:</strong> ${offer.preferred_meeting_location || 'Not specified'}</p>
-                    <p><strong>Business:</strong> ${offer.business_name || 'N/A'}</p>
                     <p><strong>Created:</strong> ${this.formatDate(offer.created_at)}</p>
                 </div>
                 <div class="popup-actions">

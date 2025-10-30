@@ -219,12 +219,6 @@ class RequestsManager {
                     <div class="col-6"><strong>User:</strong></div>
                     <div class="col-6">${request.username || request.first_name || 'N/A'}</div>
                 </div>
-                ${request.business_name ? `
-                    <div class="row mb-3">
-                        <div class="col-6"><strong>Business:</strong></div>
-                        <div class="col-6">${request.business_name}</div>
-                    </div>
-                ` : ''}
                 <div class="row mb-3">
                     <div class="col-6"><strong>Coin Type:</strong></div>
                     <div class="col-6">${request.coin_description}</div>

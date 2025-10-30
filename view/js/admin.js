@@ -212,7 +212,6 @@ class AdminManager {
                             <p class="card-text">
                                 <strong>Email:</strong> ${user.email}<br>
                                 <strong>Name:</strong> ${user.first_name || ''} ${user.last_name || ''}<br>
-                                <strong>Business:</strong> ${user.business_name || 'N/A'}<br>
                                 <strong>Role:</strong> <span class="badge badge-${this.getRoleBadgeClass(user.role)}">${user.role}</span><br>
                                 <strong>Status:</strong> <span class="badge badge-${user.is_active ? 'success' : 'danger'}">${user.is_active ? 'Active' : 'Inactive'}</span>
                             </p>

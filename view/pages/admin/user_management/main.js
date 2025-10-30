@@ -494,7 +494,6 @@ class UserManagementManager {
                         <tr><td><strong>Role:</strong></td><td><span class="badge bg-${this.getRoleBadgeClass(user.role)}">${user.role}</span></td></tr>
                         <tr><td><strong>Status:</strong></td><td><span class="badge bg-${user.is_active ? 'success' : 'danger'}">${user.is_active ? 'Active' : 'Inactive'}</span></td></tr>
                         <tr><td><strong>Verification:</strong></td><td><span class="badge bg-${user.is_verified ? 'success' : 'warning'}">${user.is_verified ? 'Verified' : 'Pending'}</span></td></tr>
-                        <tr><td><strong>Business:</strong></td><td>${user.business_name || 'N/A'}</td></tr>
                         <tr><td><strong>Joined:</strong></td><td>${this.formatDate(user.created_at)}</td></tr>
                         <tr><td><strong>Last Updated:</strong></td><td>${this.formatDate(user.updated_at)}</td></tr>
                     </table>

@@ -216,12 +216,6 @@ class OffersManager {
                     <div class="col-6"><strong>User:</strong></div>
                     <div class="col-6">${offer.username || offer.first_name || 'N/A'}</div>
                 </div>
-                ${offer.business_name ? `
-                    <div class="row mb-3">
-                        <div class="col-6"><strong>Business:</strong></div>
-                        <div class="col-6">${offer.business_name}</div>
-                    </div>
-                ` : ''}
                 <div class="row mb-3">
                     <div class="col-6"><strong>Coin Type:</strong></div>
                     <div class="col-6">${offer.description}</div>
