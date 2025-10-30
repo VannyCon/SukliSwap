@@ -158,10 +158,9 @@ class AuthManager {
             body: JSON.stringify(userData)
         });
 
-        if (data.success) {
-            this.setAuth(data.data.token, data.data.user);
-        }
-
+        // Don't auto-login after registration - user must login manually
+        // This ensures proper verification flow
+        
         return data;
     }
 

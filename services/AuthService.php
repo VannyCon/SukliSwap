@@ -83,20 +83,10 @@ class AuthService {
             ];
         }
 
-        // Generate JWT token
-        $tokenPayload = [
-            'id' => $user['id'],
-            'username' => $user['username'],
-            'email' => $user['email'],
-            'role' => $user['role'],
-            'is_verified' => $user['is_verified']
-        ];
-
-        $token = $this->jwtService->generateToken($tokenPayload);
-
+        // Don't generate token - user needs to login after registration
         return [
             'success' => true,
-            'message' => 'User registered successfully. Your account is pending admin verification.',
+            'message' => 'User registered successfully. Your account is pending admin verification. Please login to continue.',
             'data' => [
                 'user' => [
                     'id' => $user['id'],
@@ -105,8 +95,7 @@ class AuthService {
                     'role' => $user['role'],
                     'is_verified' => $user['is_verified'],
                     'created_at' => $user['created_at']
-                ],
-                'token' => $token
+                ]
             ]
         ];
     }
@@ -216,20 +205,10 @@ class AuthService {
             ];
         }
 
-        // Generate JWT token
-        $tokenPayload = [
-            'id' => $user['id'],
-            'username' => $user['username'],
-            'email' => $user['email'],
-            'role' => $user['role'],
-            'is_verified' => $user['is_verified']
-        ];
-
-        $token = $this->jwtService->generateToken($tokenPayload);
-
+        // Don't generate token - user needs to login after registration
         return [
             'success' => true,
-            'message' => 'User registered successfully. Your account is pending admin verification.',
+            'message' => 'User registered successfully. Your account is pending admin verification. Please login to continue.',
             'data' => [
                 'user' => [
                     'id' => $user['id'],
@@ -238,8 +217,7 @@ class AuthService {
                     'role' => $user['role'],
                     'is_verified' => $user['is_verified'],
                     'created_at' => $user['created_at']
-                ],
-                'token' => $token
+                ]
             ]
         ];
     }
