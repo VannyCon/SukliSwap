@@ -64,7 +64,7 @@ class MessagingManager {
             
             this.websocket.onopen = () => {
                 console.log('WebSocket connected');
-                this.updateConnectionStatus('connected');
+                // this.updateConnectionStatus('connected');
                 this.authenticateWebSocket();
             };
             
@@ -74,7 +74,7 @@ class MessagingManager {
             
             this.websocket.onclose = (event) => {
                 console.log('WebSocket disconnected:', event.code, event.reason);
-                this.updateConnectionStatus('disconnected');
+                // this.updateConnectionStatus('disconnected');
                 // Only attempt to reconnect if it wasn't a manual close
                 if (event.code !== 1000) {
                     console.log('Attempting to reconnect in 5 seconds...');
@@ -85,7 +85,7 @@ class MessagingManager {
             this.websocket.onerror = (error) => {
                 console.warn('WebSocket connection failed. Real-time features will be limited.');
                 console.log('To enable real-time messaging, start the WebSocket server: php websocket_server.php');
-                this.updateConnectionStatus('error');
+                // this.updateConnectionStatus('error');
                 // Don't show error to user as the app can still work without WebSocket
             };
         } catch (error) {
@@ -511,28 +511,28 @@ class MessagingManager {
         }
     }
 
-    updateConnectionStatus(status) {
-        const statusElement = document.getElementById('connectionStatus');
-        if (!statusElement) return;
+    // updateConnectionStatus(status) {
+    //     const statusElement = document.getElementById('connectionStatus');
+    //     if (!statusElement) return;
 
-        switch (status) {
-            case 'connected':
-                statusElement.className = 'badge bg-success ms-2';
-                statusElement.innerHTML = '<i class="fas fa-circle"></i> Live';
-                break;
-            case 'disconnected':
-                statusElement.className = 'badge bg-warning ms-2';
-                statusElement.innerHTML = '<i class="fas fa-circle"></i> Reconnecting...';
-                break;
-            case 'error':
-                statusElement.className = 'badge bg-danger ms-2';
-                statusElement.innerHTML = '<i class="fas fa-circle"></i> Offline';
-                break;
-            default:
-                statusElement.className = 'badge bg-secondary ms-2';
-                statusElement.innerHTML = '<i class="fas fa-circle"></i> Connecting...';
-        }
-    }
+    //     switch (status) {
+    //         case 'connected':
+    //             statusElement.className = 'badge bg-success ms-2';
+    //             statusElement.innerHTML = '<i class="fas fa-circle"></i> Live';
+    //             break;
+    //         case 'disconnected':
+    //             statusElement.className = 'badge bg-warning ms-2';
+    //             statusElement.innerHTML = '<i class="fas fa-circle"></i> Reconnecting...';
+    //             break;
+    //         case 'error':
+    //             statusElement.className = 'badge bg-danger ms-2';
+    //             statusElement.innerHTML = '<i class="fas fa-circle"></i> Offline';
+    //             break;
+    //         default:
+    //             statusElement.className = 'badge bg-secondary ms-2';
+    //             statusElement.innerHTML = '<i class="fas fa-circle"></i> Connecting...';
+    //     }
+    // }
 
     startMessageAutoRefresh() {
         // Clear any existing interval

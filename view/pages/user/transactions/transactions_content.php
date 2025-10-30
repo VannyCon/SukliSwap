@@ -339,9 +339,9 @@
             <div class="modal-header">
                 <h5 class="modal-title">
                     <i class="fas fa-comments"></i> Direct Message
-                    <span id="connectionStatus" class="badge bg-secondary ms-2" style="font-size: 0.7em;">
+                    <!-- <span id="connectionStatus" class="badge bg-secondary ms-2" style="font-size: 0.7em;">
                         <i class="fas fa-circle"></i> Connecting...
-                    </span>
+                    </span> -->
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
