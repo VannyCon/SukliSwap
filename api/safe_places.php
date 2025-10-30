@@ -162,6 +162,16 @@ elseif ($_SERVER["REQUEST_METHOD"] == "POST") {
         
         $action = $_GET['action'] ?? '';
         
+        // Handle JSON input for certain actions
+        $input = [];
+        $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+        if (strpos($contentType, 'application/json') !== false) {
+            $rawInput = file_get_contents('php://input');
+            $input = json_decode($rawInput, true) ?? [];
+        } else {
+            $input = $_POST;
+        }
+        
         switch ($action) {
             case 'createSafePlace':
                 $data = $safePlaceService->cleanArray($_POST);
@@ -188,8 +198,8 @@ elseif ($_SERVER["REQUEST_METHOD"] == "POST") {
                 break;
                 
             case 'updateSafePlace':
-                $id = $_POST['id'] ?? '';
-                $data = $safePlaceService->cleanArray($_POST);
+                $id = $input['id'] ?? '';
+                $data = $safePlaceService->cleanArray($input);
                 unset($data['id']); // Remove ID from data array
                 
                 if (!$id || !is_numeric($id)) {
@@ -215,7 +225,7 @@ elseif ($_SERVER["REQUEST_METHOD"] == "POST") {
                 break;
                 
             case 'deleteSafePlace':
-                $id = $_POST['id'] ?? '';
+                $id = $input['id'] ?? '';
                 
                 if (!$id || !is_numeric($id)) {
                     http_response_code(400);
@@ -228,7 +238,7 @@ elseif ($_SERVER["REQUEST_METHOD"] == "POST") {
                 break;
                 
             case 'restoreSafePlace':
-                $id = $_POST['id'] ?? '';
+                $id = $input['id'] ?? '';
                 
                 if (!$id || !is_numeric($id)) {
                     http_response_code(400);
