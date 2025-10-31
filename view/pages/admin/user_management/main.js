@@ -519,15 +519,15 @@ class UserManagementManager {
                                 ${images.map((img, index) => `
                                     <div class="col-md-3 col-6">
                                         <div class="card h-100 valid-id-card">
-                                            <img src="../../../${img.file_path}" 
+                                            <img src="${img.file_path.startsWith('http') ? img.file_path : '../../../' + img.file_path}" 
                                                  class="card-img-top" 
                                                  style="height: 150px; object-fit: cover; cursor: pointer;"
-                                                 onclick="previewValidIdImage('../../../${img.file_path}', '${img.filename}')"
+                                                 onclick="previewValidIdImage('${img.file_path.startsWith('http') ? img.file_path : '../../../' + img.file_path}', '${img.filename}')"
                                                  alt="Valid ID ${index + 1}">
                                             <div class="card-body p-2">
                                                 <small class="text-muted d-block">${img.filename}</small>
                                                 <button class="btn btn-sm btn-outline-primary w-100 mt-1 valid-id-preview-btn" 
-                                                        onclick="previewValidIdImage('../../../${img.file_path}', '${img.filename}')">
+                                                        onclick="previewValidIdImage('${img.file_path.startsWith('http') ? img.file_path : '../../../' + img.file_path}', '${img.filename}')">
                                                     <i class="fas fa-eye me-1"></i>Preview
                                                 </button>
                                             </div>

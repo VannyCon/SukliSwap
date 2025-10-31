@@ -21,10 +21,13 @@ WORKDIR /var/www/html
 COPY composer.json composer.lock ./
 
 # Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # Copy application files
 COPY . .
+
+# Regenerate autoloader to ensure all classes are properly mapped
+RUN composer dump-autoload --optimize --no-dev
 
 # Set proper permissions
 RUN chown -R www-data:www-data /var/www/html \
